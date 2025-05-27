@@ -1,0 +1,89 @@
+﻿<Window x:Class="WpfApp1.SuppliersWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Постачальники" Height="500" Width="800"
+        Background="#E3F2FD">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок -->
+        <TextBlock Text="Управління постачальниками" FontSize="22" FontWeight="Bold"
+                   Foreground="#1E88E5" HorizontalAlignment="Left" Margin="33,11,0,9"/>
+
+        <!-- Поле для пошуку -->
+        <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Center" Margin="350,10,0,15">
+            <Border Background="White" CornerRadius="5" Padding="5" Width="196" Height="40"
+                    BorderBrush="#1E88E5" BorderThickness="2">
+                <TextBox x:Name="SearchTextBox" Height="30"
+                         VerticalAlignment="Center" Padding="5"
+                         BorderThickness="0" FontSize="14"
+                         Background="Transparent" Foreground="Black"
+                         TextChanged="SearchTextBox_TextChanged" Margin="3,0,3,0"/>
+            </Border>
+            <Button Content="🔍" Width="35" Height="35" Background="#1E88E5" Foreground="White"
+                    BorderThickness="0" Cursor="Hand"
+                    Click="SearchButton_Click"/>
+        </StackPanel>
+
+        <!-- Таблиця постачальників -->
+        <Border Grid.Row="1" BorderBrush="#1E88E5" BorderThickness="2" CornerRadius="5" Background="White">
+            <DataGrid x:Name="SuppliersDataGrid" Margin="5" Padding="5"
+                      AutoGenerateColumns="False" CanUserAddRows="False"
+                      ColumnHeaderHeight="40" RowHeight="40"
+                      AlternationCount="2" AlternatingRowBackground="#E3F2FD"
+                      HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding SupplierID}" IsReadOnly="True" Width="50"/>
+                    <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="150"/>
+                    <DataGridTextColumn Header="Контакт" Binding="{Binding ContactInfo}" Width="200"/>
+                    <DataGridTextColumn Header="Категорія" Binding="{Binding Category}" Width="150"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Кнопки управління -->
+        <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="10">
+            <Button Content="➕ Додати" Click="AddSupplier_Click" Width="130" Height="40"
+                    FontSize="14" Foreground="White" Cursor="Hand"
+                    Background="#43A047" BorderThickness="0" Margin="5">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="10"
+                                            BorderThickness="0" Padding="5">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+            <Button Content="🗑 Видалити" Click="DeleteSupplier_Click" Width="130" Height="40"
+                    FontSize="14" Foreground="White" Cursor="Hand"
+                    Background="#D32F2F" BorderThickness="0" Margin="5">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="10"
+                                            BorderThickness="0" Padding="5">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>
