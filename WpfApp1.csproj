@@ -9,17 +9,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Data\users.json" />
     <None Remove="Images\logo.jpg" />
     <None Remove="Resources\store.gif" />
     <None Remove="Resources\store1.gif" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Data\users.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="MaterialDesignColors" Version="5.2.1" />
     <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />
     <PackageReference Include="MaterialDesignThemes.MahApps" Version="5.2.1" />
     <PackageReference Include="MaterialDesignThemes.Wpf" Version="1.0.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +35,12 @@
 
   <ItemGroup>
     <Resource Include="Images\logo.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Views\LoginWindow.xaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Page>
   </ItemGroup>
 
 </Project>

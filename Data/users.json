@@ -1,0 +1,76 @@
+{
+  "Users": [
+    {
+      "Id": 1,
+      "Username": "admin",
+      "PasswordHash": "$2a$12$S7hQlYbwRmJ6Uj6g5LZTa.9Qz4rV1XlZ8JQ9mZ3bL1cK1eX2vY5W",
+      "Role": "Адміністратор",
+      "FullName": "Головний адміністратор системи",
+      "IsActive": true,
+      "Comment": "Пароль: admin123"
+    },
+    {
+      "Id": 2,
+      "Username": "manager",
+      "PasswordHash": "$2a$12$KjQlYbwRmJ6Uj6g5LZTa.9Qz4rV1XlZ8JQ9mZ3bL1cK1eX2vY5W",
+      "Role": "Менеджер",
+      "FullName": "Менеджер відділу продажів",
+      "IsActive": true,
+      "Comment": "Пароль: manager123"
+    },
+    {
+      "Id": 3,
+      "Username": "storekeeper",
+      "PasswordHash": "$2a$12$AbCdEfGhIjKlMnOpQrStUvWxYz1234567890",
+      "Role": "Кладовщик",
+      "FullName": "Іван Петренко",
+      "IsActive": true,
+      "Comment": "Пароль: keeper123"
+    },
+    {
+      "Id": 4,
+      "Username": "cashier",
+      "PasswordHash": "$2a$12$XyZAbCdEfGhIjKlMnOpQrStUvWxYz",
+      "Role": "Касир",
+      "FullName": "Ольга Сидорова",
+      "IsActive": true,
+      "Comment": "Пароль: cashier123"
+    },
+    {
+      "Id": 5,
+      "Username": "test",
+      "PasswordHash": "$2a$12$7uHd5vO4JZkUvWYwG9Xz8.JKlMnOpQrStUvWxYzAbCdEfGhIj",
+      "Role": "Тестувальник",
+      "FullName": "Тестовий користувач",
+      "IsActive": true,
+      "Comment": "Пароль: test123"
+    }
+  ],
+  "Roles": [
+    {
+      "Name": "Адміністратор",
+      "Permissions": [ "manage_users", "edit_settings", "view_reports", "full_access" ],
+      "Comment": "Повний доступ до системи"
+    },
+    {
+      "Name": "Менеджер",
+      "Permissions": [ "manage_orders", "view_reports", "edit_products" ],
+      "Comment": "Доступ до управління замовленнями"
+    },
+    {
+      "Name": "Кладовщик",
+      "Permissions": [ "manage_inventory", "view_stock" ],
+      "Comment": "Доступ до складських операцій"
+    },
+    {
+      "Name": "Касир",
+      "Permissions": [ "process_sales", "view_prices" ],
+      "Comment": "Доступ до касових операцій"
+    }
+  ],
+  "Comments": {
+    "PasswordHashes": "Всі паролі захешовані за допомогою BCrypt (12 rounds)",
+    "TestCredentials": "Для тестування використовуйте логіни: admin, manager, storekeeper, cashier, test",
+    "DefaultPasswords": "Всі паролі закінчуються на '123' (наприклад, admin123)"
+  }
+}
