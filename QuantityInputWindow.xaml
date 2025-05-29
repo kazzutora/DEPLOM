@@ -1,0 +1,35 @@
+﻿<Window x:Class="WpfApp1.QuantityInputWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="QuantityInputWindow" Height="250" Width="300"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Доступна кількість:"/>
+        <TextBlock x:Name="AvailableQuantityText" Grid.Row="0" HorizontalAlignment="Right"/>
+
+        <TextBlock Grid.Row="1" Text="Кількість для продажу:" Margin="0,10,0,0"/>
+        <Slider x:Name="QuantitySlider" Grid.Row="2" Minimum="1" ValueChanged="QuantitySlider_ValueChanged"/>
+        <TextBox x:Name="QuantityText" Grid.Row="3" TextChanged="QuantityText_TextChanged"/>
+
+        <TextBlock Grid.Row="4" Text="Ціна за одиницю:" Margin="0,10,0,0"/>
+        <TextBlock x:Name="UnitPriceText" Grid.Row="4" HorizontalAlignment="Right"/>
+
+        <TextBlock Grid.Row="5" Text="Загальна сума:" Margin="0,10,0,0"/>
+        <TextBlock x:Name="TotalPriceText" Grid.Row="5" HorizontalAlignment="Right" FontWeight="Bold"/>
+
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Скасувати" Width="80" Margin="0,0,10,0" Click="CancelButton_Click"/>
+            <Button Content="Підтвердити" Width="80" Click="OkButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
