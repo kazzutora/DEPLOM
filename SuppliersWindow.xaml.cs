@@ -31,7 +31,7 @@ namespace WpfApp1
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT SupplierID, Name, ContactInfo, CategoryName FROM Suppliers";
+                    string query = "SELECT SupplierID, Name, ContactInfo, Category FROM Suppliers";
                     SqlDataAdapter adapter = new SqlDataAdapter(query, connection);
 
                     DataTable suppliersTable = new DataTable();
