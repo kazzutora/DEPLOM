@@ -372,22 +372,24 @@ namespace WpfApp1
             {
                 // Створюємо стилі для тексту
                 BaseFont baseFont = BaseFont.CreateFont("c:/windows/fonts/arial.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-                Font titleFont = new Font(baseFont, 16, Font.BOLD, BaseColor.DARK_GRAY);
-                Font headerFont = new Font(baseFont, 12, Font.BOLD, BaseColor.WHITE);
-                Font normalFont = new Font(baseFont, 10, Font.NORMAL, BaseColor.BLACK);
-                Font boldFont = new Font(baseFont, 10, Font.BOLD, BaseColor.BLACK);
+                Font titleFont = new Font(baseFont, 16, Font.BOLD, BaseColor.BLACK); // Чорний заголовок
+                Font headerFont = new Font(baseFont, 12, Font.BOLD, BaseColor.WHITE); // Білий колір тексту для заголовків
+                Font normalFont = new Font(baseFont, 10, Font.NORMAL, BaseColor.BLACK); // Чорний текст
+                Font boldFont = new Font(baseFont, 10, Font.BOLD, BaseColor.BLACK); // Чорний жирний текст для підрахунків
+
+                // Кольори для таблиць
+                BaseColor headerColor = new BaseColor(34, 139, 34); // Зелений для заголовків
+                BaseColor lightGreen = new BaseColor(220, 255, 220); // Світло-зелений фон
+                BaseColor borderColor = new BaseColor(150, 200, 150); // Світло-зелена рамка
 
                 using (FileStream stream = new FileStream(filePath, FileMode.Create))
                 {
-                    // Вертикальна орієнтація A4
                     Document document = new Document(PageSize.A4, 30, 30, 50, 30);
                     PdfWriter writer = PdfWriter.GetInstance(document, stream);
-
-                    // Відкриваємо документ
                     document.Open();
 
-                    // Додаємо заголовок
-                    Paragraph title = new Paragraph("Деталізований звіт про продажі", titleFont);
+                    // Додаємо заголовок (тепер чорний)
+                    Paragraph title = new Paragraph("Звіт про продажі", titleFont);
                     title.Alignment = Element.ALIGN_CENTER;
                     title.SpacingAfter = 20;
                     document.Add(title);
@@ -402,7 +404,7 @@ namespace WpfApp1
                         normalFont);
                     document.Add(periodInfo);
 
-                    // Додаємо статистику
+                    // Додаємо статистику (тепер чорний)
                     decimal totalRevenue = salesData.AsEnumerable().Sum(r => Convert.ToDecimal(r["TotalAmount"]));
                     int totalItems = salesData.AsEnumerable().Sum(r => Convert.ToInt32(r["QuantitySold"]));
 
@@ -413,34 +415,40 @@ namespace WpfApp1
                         boldFont);
                     document.Add(stats);
 
+                    // Решта коду залишається без змін...
                     // Основна таблиця
                     PdfPTable table = new PdfPTable(6);
                     table.WidthPercentage = 100;
                     table.SetWidths(new float[] { 0.5f, 3f, 2f, 1f, 1.5f, 2f });
                     table.SpacingBefore = 10f;
+                    table.SpacingAfter = 20f;
 
-                    // Заголовки таблиці
-                    AddPdfCell(table, "№", headerFont, BaseColor.GRAY);
-                    AddPdfCell(table, "Назва товару", headerFont, BaseColor.GRAY);
-                    AddPdfCell(table, "Категорія", headerFont, BaseColor.GRAY);
-                    AddPdfCell(table, "К-сть", headerFont, BaseColor.GRAY);
-                    AddPdfCell(table, "Ціна за од.", headerFont, BaseColor.GRAY);
-                    AddPdfCell(table, "Загальна сума", headerFont, BaseColor.GRAY);
+                    // Заголовки таблиці (білий текст на зеленому фоні)
+                    AddPdfCell(table, "№", headerFont, headerColor, borderColor);
+                    AddPdfCell(table, "Назва товару", headerFont, headerColor, borderColor);
+                    AddPdfCell(table, "Категорія", headerFont, headerColor, borderColor);
+                    AddPdfCell(table, "К-сть", headerFont, headerColor, borderColor);
+                    AddPdfCell(table, "Ціна за од.", headerFont, headerColor, borderColor);
+                    AddPdfCell(table, "Загальна сума", headerFont, headerColor, borderColor);
 
-                    // Заповнення даними
+                    // Заповнення даними (чорний текст на світло-зеленому/білому фоні)
                     int rowNum = 1;
+                    bool alternate = false;
                     foreach (DataRow row in salesData.Rows)
                     {
-                        AddPdfCell(table, rowNum.ToString(), normalFont);
-                        AddPdfCell(table, row["ProductName"].ToString(), normalFont);
-                        AddPdfCell(table, row["CategoryName"].ToString(), normalFont);
-                        AddPdfCell(table, row["QuantitySold"].ToString(), normalFont, alignment: Element.ALIGN_RIGHT);
+                        BaseColor cellColor = alternate ? lightGreen : BaseColor.WHITE;
+
+                        AddPdfCell(table, rowNum.ToString(), normalFont, cellColor, borderColor);
+                        AddPdfCell(table, row["ProductName"].ToString(), normalFont, cellColor, borderColor);
+                        AddPdfCell(table, row["CategoryName"].ToString(), normalFont, cellColor, borderColor);
+                        AddPdfCell(table, row["QuantitySold"].ToString(), normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
 
                         decimal price = Convert.ToDecimal(row["TotalAmount"]) / Convert.ToInt32(row["QuantitySold"]);
-                        AddPdfCell(table, price.ToString("N2") + " грн", normalFont, alignment: Element.ALIGN_RIGHT);
-                        AddPdfCell(table, Convert.ToDecimal(row["TotalAmount"]).ToString("N2") + " грн", normalFont, alignment: Element.ALIGN_RIGHT);
+                        AddPdfCell(table, price.ToString("N2") + " грн", normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+                        AddPdfCell(table, Convert.ToDecimal(row["TotalAmount"]).ToString("N2") + " грн", normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
 
                         rowNum++;
+                        alternate = !alternate;
                     }
 
                     document.Add(table);
@@ -459,27 +467,36 @@ namespace WpfApp1
 
                     if (topProducts.Count > 0)
                     {
-                        Paragraph topTitle = new Paragraph("\nТоп-5 товарів за продажами:", boldFont);
-                        topTitle.SpacingBefore = 20f;
+                        Paragraph topTitle = new Paragraph("Топ-5 товарів за продажами:", boldFont);
+                        topTitle.SpacingBefore = 30f;
+                        topTitle.SpacingAfter = 10f;
                         document.Add(topTitle);
 
                         PdfPTable topTable = new PdfPTable(4);
                         topTable.WidthPercentage = 100;
                         topTable.SetWidths(new float[] { 0.5f, 3f, 2f, 2f });
+                        topTable.SpacingAfter = 20f;
 
-                        AddPdfCell(topTable, "№", headerFont, BaseColor.GRAY);
-                        AddPdfCell(topTable, "Товар", headerFont, BaseColor.GRAY);
-                        AddPdfCell(topTable, "Категорія", headerFont, BaseColor.GRAY);
-                        AddPdfCell(topTable, "Сума продажів", headerFont, BaseColor.GRAY);
+                        // Заголовки топ-таблиці (білий текст на зеленому фоні)
+                        AddPdfCell(topTable, "№", headerFont, headerColor, borderColor);
+                        AddPdfCell(topTable, "Товар", headerFont, headerColor, borderColor);
+                        AddPdfCell(topTable, "Категорія", headerFont, headerColor, borderColor);
+                        AddPdfCell(topTable, "Сума продажів", headerFont, headerColor, borderColor);
 
+                        // Заповнення топ-таблиці (чорний текст на світло-зеленому/білому фоні)
                         int topNum = 1;
+                        alternate = false;
                         foreach (var product in topProducts)
                         {
-                            AddPdfCell(topTable, topNum.ToString(), normalFont);
-                            AddPdfCell(topTable, product.ProductName, normalFont);
-                            AddPdfCell(topTable, product.Category, normalFont);
-                            AddPdfCell(topTable, product.Total.ToString("N2") + " грн", normalFont, alignment: Element.ALIGN_RIGHT);
+                            BaseColor cellColor = alternate ? lightGreen : BaseColor.WHITE;
+
+                            AddPdfCell(topTable, topNum.ToString(), normalFont, cellColor, borderColor);
+                            AddPdfCell(topTable, product.ProductName, normalFont, cellColor, borderColor);
+                            AddPdfCell(topTable, product.Category, normalFont, cellColor, borderColor);
+                            AddPdfCell(topTable, product.Total.ToString("N2") + " грн", normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+
                             topNum++;
+                            alternate = !alternate;
                         }
 
                         document.Add(topTable);
@@ -497,14 +514,17 @@ namespace WpfApp1
             }
         }
 
-        private void AddPdfCell(PdfPTable table, string text, Font font, BaseColor bgColor = null, int alignment = Element.ALIGN_LEFT)
+        // Оновлений метод для додавання комірок з можливістю вказати колір рамки
+        private void AddPdfCell(PdfPTable table, string text, Font font,
+                               BaseColor bgColor = null, BaseColor borderColor = null,
+                               int alignment = Element.ALIGN_LEFT)
         {
             PdfPCell cell = new PdfPCell(new Phrase(text, font));
             cell.HorizontalAlignment = alignment;
             cell.VerticalAlignment = Element.ALIGN_MIDDLE;
             cell.Padding = 5;
             cell.BorderWidth = 0.5f;
-            cell.BorderColor = BaseColor.LIGHT_GRAY;
+            cell.BorderColor = borderColor ?? BaseColor.LIGHT_GRAY;
 
             if (bgColor != null)
             {
@@ -513,7 +533,294 @@ namespace WpfApp1
 
             table.AddCell(cell);
         }
+        private void BtnGenerateAnalyticalReport_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (salesData == null || salesData.Rows.Count == 0)
+                {
+                    MessageBox.Show("Немає даних для формування звіту за обраний період.", "Інформація", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
 
+                var saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "PDF files (*.pdf)|*.pdf",
+                    FileName = $"Аналітичний_звіт_{DateTime.Now:yyyyMMdd_HHmmss}.pdf",
+                    Title = "Зберегти аналітичний звіт як PDF"
+                };
+
+                if (saveDialog.ShowDialog() == true)
+                {
+                    GenerateAnalyticalPdfReport(saveDialog.FileName);
+
+                    if (MessageBox.Show("Аналітичний звіт успішно згенеровано! Відкрити файл?", "Успіх",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    {
+                        Process.Start(new ProcessStartInfo(saveDialog.FileName) { UseShellExecute = true });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка при генерації аналітичного звіту: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Метод для генерації аналітичного PDF-звіту
+        private void GenerateAnalyticalPdfReport(string filePath)
+        {
+            try
+            {
+                DateTime startDate = StartDatePicker.SelectedDate ?? DateTime.Today.AddMonths(-1);
+                DateTime endDate = EndDatePicker.SelectedDate ?? DateTime.Today;
+
+                // Створюємо стилі для тексту
+                BaseFont baseFont = BaseFont.CreateFont("c:/windows/fonts/arial.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+
+                // Кольори тексту
+                BaseColor darkGray = new BaseColor(50, 50, 50);    // Основний текст
+                BaseColor softBlack = new BaseColor(70, 70, 70);   // Заголовки
+                BaseColor white = BaseColor.WHITE;                 // Текст в заголовках таблиць
+
+                // Кольори для таблиць
+                BaseColor headerColor = new BaseColor(34, 139, 34); // Зелений фон заголовків
+                BaseColor lightGreen = new BaseColor(220, 255, 220); // Світло-зелений фон
+                BaseColor borderColor = new BaseColor(150, 200, 150); // Світло-зелена рамка
+                BaseColor lightGray = new BaseColor(240, 240, 240); // Світло-сірий для підсумків
+
+                // Шрифти
+                Font titleFont = new Font(baseFont, 16, Font.BOLD, softBlack);        // Заголовок звіту
+                Font sectionFont = new Font(baseFont, 12, Font.BOLD, softBlack);     // Назви секцій
+                Font tableHeaderFont = new Font(baseFont, 12, Font.BOLD, white);     // Заголовки стовпців (білий)
+                Font normalFont = new Font(baseFont, 10, Font.NORMAL, darkGray);     // Основний текст
+                Font boldFont = new Font(baseFont, 10, Font.BOLD, softBlack);        // Жирний текст
+
+                // Змінна для чергування кольорів рядків
+                bool alternate = false;
+
+                using (FileStream stream = new FileStream(filePath, FileMode.Create))
+                {
+                    Document document = new Document(PageSize.A4.Rotate(), 30, 30, 50, 30);
+                    PdfWriter writer = PdfWriter.GetInstance(document, stream);
+
+                    writer.PageEvent = new PdfPageEventHandler("Аналітичний звіт про продажі", startDate, endDate);
+
+                    document.Open();
+
+                    // Додаємо заголовок
+                    Paragraph title = new Paragraph("Аналітичний звіт про продажі", titleFont);
+                    title.Alignment = Element.ALIGN_CENTER;
+                    title.SpacingAfter = 20;
+                    document.Add(title);
+
+                    // Додаємо інформацію про період
+                    Paragraph periodInfo = new Paragraph(
+                        $"Період: {startDate:dd.MM.yyyy} - {endDate:dd.MM.yyyy}\n" +
+                        $"Дата формування: {DateTime.Now:dd.MM.yyyy HH:mm}\n\n",
+                        normalFont);
+                    document.Add(periodInfo);
+
+                    // Загальна статистика
+                    decimal totalRevenue = salesData.AsEnumerable().Sum(r => Convert.ToDecimal(r["TotalAmount"]));
+                    int totalItems = salesData.AsEnumerable().Sum(r => Convert.ToInt32(r["QuantitySold"]));
+                    int totalSales = salesData.Rows.Count;
+
+                    Paragraph statsTitle = new Paragraph("Загальна статистика продажів", sectionFont);
+                    statsTitle.SpacingBefore = 15f;
+                    statsTitle.SpacingAfter = 10f;
+                    document.Add(statsTitle);
+
+                    PdfPTable statsTable = new PdfPTable(3);
+                    statsTable.WidthPercentage = 100;
+                    statsTable.SetWidths(new float[] { 1f, 1f, 1f });
+
+                    // Заголовки (білий текст на зеленому фоні)
+                    AddPdfCell(statsTable, "Загальний дохід", tableHeaderFont, headerColor, borderColor);
+                    AddPdfCell(statsTable, "Загальна кількість продажів", tableHeaderFont, headerColor, borderColor);
+                    AddPdfCell(statsTable, "Загальна кількість товарів", tableHeaderFont, headerColor, borderColor);
+
+                    // Дані (темний текст на світло-зеленому/білому фоні)
+                    AddPdfCell(statsTable, $"{totalRevenue.ToString("N2")} грн", normalFont, lightGreen, borderColor);
+                    AddPdfCell(statsTable, totalSales.ToString(), normalFont, BaseColor.WHITE, borderColor);
+                    AddPdfCell(statsTable, totalItems.ToString(), normalFont, lightGreen, borderColor);
+
+                    document.Add(statsTable);
+
+                    // Динаміка продажів по дням
+                    var dailySales = salesData.AsEnumerable()
+                        .GroupBy(r => {
+                            DateTime saleDate;
+                            if (DateTime.TryParseExact(r["SaleDate"].ToString(), "dd.MM.yyyy HH:mm",
+                                CultureInfo.InvariantCulture, DateTimeStyles.None, out saleDate))
+                            {
+                                return saleDate.Date;
+                            }
+                            return DateTime.MinValue;
+                        })
+                        .Where(g => g.Key != DateTime.MinValue)
+                        .Select(g => new
+                        {
+                            Date = g.Key,
+                            SalesCount = g.Count(),
+                            ItemsSold = g.Sum(r => Convert.ToInt32(r["QuantitySold"])),
+                            TotalAmount = g.Sum(r => Convert.ToDecimal(r["TotalAmount"]))
+                        })
+                        .OrderBy(x => x.Date)
+                        .ToList();
+
+                    if (dailySales.Any())
+                    {
+                        Paragraph dailyTitle = new Paragraph("\nДинаміка продажів по дням", sectionFont);
+                        dailyTitle.SpacingBefore = 20f;
+                        dailyTitle.SpacingAfter = 10f;
+                        document.Add(dailyTitle);
+
+                        PdfPTable dailyTable = new PdfPTable(4);
+                        dailyTable.WidthPercentage = 100;
+                        dailyTable.SetWidths(new float[] { 2f, 1.5f, 1.5f, 2f });
+
+                        // Заголовки (білий текст на зеленому фоні)
+                        AddPdfCell(dailyTable, "Дата", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(dailyTable, "Кількість продажів", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(dailyTable, "Кількість товарів", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(dailyTable, "Загальна сума", tableHeaderFont, headerColor, borderColor);
+
+                        // Дані (темний текст на світло-зеленому/білому фоні)
+                        alternate = false;
+                        foreach (var day in dailySales)
+                        {
+                            BaseColor cellColor = alternate ? lightGreen : BaseColor.WHITE;
+
+                            AddPdfCell(dailyTable, day.Date.ToString("dd.MM.yyyy"), normalFont, cellColor, borderColor);
+                            AddPdfCell(dailyTable, day.SalesCount.ToString(), normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+                            AddPdfCell(dailyTable, day.ItemsSold.ToString(), normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+                            AddPdfCell(dailyTable, day.TotalAmount.ToString("N2") + " грн", normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+
+                            alternate = !alternate;
+                        }
+
+                        // Підсумковий рядок
+                        AddPdfCell(dailyTable, "Всього:", boldFont, lightGray, borderColor);
+                        AddPdfCell(dailyTable, dailySales.Sum(d => d.SalesCount).ToString(), boldFont, lightGray, borderColor, Element.ALIGN_RIGHT);
+                        AddPdfCell(dailyTable, dailySales.Sum(d => d.ItemsSold).ToString(), boldFont, lightGray, borderColor, Element.ALIGN_RIGHT);
+                        AddPdfCell(dailyTable, dailySales.Sum(d => d.TotalAmount).ToString("N2") + " грн", boldFont, lightGray, borderColor, Element.ALIGN_RIGHT);
+
+                        document.Add(dailyTable);
+                    }
+
+                    // Аналіз по категоріях
+                    var salesByCategory = salesData.AsEnumerable()
+                        .GroupBy(r => r["CategoryName"].ToString())
+                        .Select(g => new
+                        {
+                            Category = g.Key,
+                            SalesCount = g.Count(),
+                            ItemsSold = g.Sum(r => Convert.ToInt32(r["QuantitySold"])),
+                            TotalAmount = g.Sum(r => Convert.ToDecimal(r["TotalAmount"])),
+                            Percentage = (decimal)g.Sum(r => Convert.ToDecimal(r["TotalAmount"])) / totalRevenue * 100
+                        })
+                        .OrderByDescending(x => x.TotalAmount)
+                        .ToList();
+
+                    if (salesByCategory.Any())
+                    {
+                        Paragraph categoryTitle = new Paragraph("\nАналіз продажів по категоріях", sectionFont);
+                        categoryTitle.SpacingBefore = 20f;
+                        categoryTitle.SpacingAfter = 10f;
+                        document.Add(categoryTitle);
+
+                        PdfPTable categoryTable = new PdfPTable(5);
+                        categoryTable.WidthPercentage = 100;
+                        categoryTable.SetWidths(new float[] { 3f, 1.5f, 1.5f, 2f, 2f });
+
+                        // Заголовки (білий текст на зеленому фоні)
+                        AddPdfCell(categoryTable, "Категорія", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(categoryTable, "Кількість продажів", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(categoryTable, "Кількість товарів", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(categoryTable, "Загальна сума", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(categoryTable, "Частка від загального доходу", tableHeaderFont, headerColor, borderColor);
+
+                        // Дані (темний текст на світло-зеленому/білому фоні)
+                        alternate = false;
+                        foreach (var category in salesByCategory)
+                        {
+                            BaseColor cellColor = alternate ? lightGreen : BaseColor.WHITE;
+
+                            AddPdfCell(categoryTable, category.Category, normalFont, cellColor, borderColor);
+                            AddPdfCell(categoryTable, category.SalesCount.ToString(), normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+                            AddPdfCell(categoryTable, category.ItemsSold.ToString(), normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+                            AddPdfCell(categoryTable, category.TotalAmount.ToString("N2") + " грн", normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+                            AddPdfCell(categoryTable, category.Percentage.ToString("N1") + "%", normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+
+                            alternate = !alternate;
+                        }
+
+                        document.Add(categoryTable);
+                    }
+
+                    // Топ товарів
+                    var topProducts = salesData.AsEnumerable()
+                        .GroupBy(r => new { Name = r["ProductName"].ToString(), Category = r["CategoryName"].ToString() })
+                        .Select(g => new
+                        {
+                            ProductName = g.Key.Name,
+                            Category = g.Key.Category,
+                            SalesCount = g.Count(),
+                            ItemsSold = g.Sum(r => Convert.ToInt32(r["QuantitySold"])),
+                            TotalAmount = g.Sum(r => Convert.ToDecimal(r["TotalAmount"]))
+                        })
+                        .OrderByDescending(x => x.TotalAmount)
+                        .Take(10)
+                        .ToList();
+
+                    if (topProducts.Any())
+                    {
+                        Paragraph topProductsTitle = new Paragraph("\nТоп-10 товарів за обсягом продажів", sectionFont);
+                        topProductsTitle.SpacingBefore = 20f;
+                        topProductsTitle.SpacingAfter = 10f;
+                        document.Add(topProductsTitle);
+
+                        PdfPTable topProductsTable = new PdfPTable(5);
+                        topProductsTable.WidthPercentage = 100;
+                        topProductsTable.SetWidths(new float[] { 0.5f, 3f, 2f, 1.5f, 2f });
+
+                        // Заголовки (білий текст на зеленому фоні)
+                        AddPdfCell(topProductsTable, "№", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(topProductsTable, "Товар", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(topProductsTable, "Категорія", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(topProductsTable, "Кількість проданих", tableHeaderFont, headerColor, borderColor);
+                        AddPdfCell(topProductsTable, "Загальна сума", tableHeaderFont, headerColor, borderColor);
+
+                        // Дані (темний текст на світло-зеленому/білому фоні)
+                        int counter = 1;
+                        alternate = false;
+                        foreach (var product in topProducts)
+                        {
+                            BaseColor cellColor = alternate ? lightGreen : BaseColor.WHITE;
+
+                            AddPdfCell(topProductsTable, counter.ToString(), normalFont, cellColor, borderColor);
+                            AddPdfCell(topProductsTable, product.ProductName, normalFont, cellColor, borderColor);
+                            AddPdfCell(topProductsTable, product.Category, normalFont, cellColor, borderColor);
+                            AddPdfCell(topProductsTable, product.ItemsSold.ToString(), normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+                            AddPdfCell(topProductsTable, product.TotalAmount.ToString("N2") + " грн", normalFont, cellColor, borderColor, Element.ALIGN_RIGHT);
+
+                            counter++;
+                            alternate = !alternate;
+                        }
+
+                        document.Add(topProductsTable);
+                    }
+
+                    document.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка при генерації аналітичного звіту: {ex.Message}", "Помилка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         public class PdfPageEventHandler : IPdfPageEvent
         {
             private readonly string _reportTitle;
@@ -756,6 +1063,7 @@ namespace WpfApp1
 
             footer.WriteSelectedRows(0, -1, document.LeftMargin, document.BottomMargin, writer.DirectContent);
         }
+
 
         public void OnParagraph(PdfWriter writer, Document document, float paragraphPosition) { }
         public void OnParagraphEnd(PdfWriter writer, Document document, float paragraphPosition) { }

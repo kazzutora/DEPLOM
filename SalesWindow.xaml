@@ -119,6 +119,9 @@
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
             <Button x:Name="BtnSell" Content="Продати" Width="100" Margin="5" Click="BtnSell_Click"/>
             <Button x:Name="BtnGenerateReport" Content="Звіт PDF" Width="100" Margin="5" Click="BtnGenerateReport_Click"/>
+            <Button x:Name="BtnGenerateAnalyticalReport" Content="Аналітичний звіт" 
+        Click="BtnGenerateAnalyticalReport_Click" Margin="5" Padding="10,5"
+        Style="{StaticResource ModernButtonStyle}"/>
             <Button Content="Закрити" Width="100" Margin="5" Click="Close_Click"/>
         </StackPanel>
     </Grid>
