@@ -30,4 +30,41 @@ namespace WpfApp1.Models
         public List<User> Users { get; set; } = new List<User>();
         public List<Role> Roles { get; set; } = new List<Role>();
     }
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public decimal Price { get; set; }
+        public int Quantity { get; set; }
+        public int CategoryId { get; set; }
+        public Category Category { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public List<Product> Products { get; set; } = new List<Product>();
+    }
+
+    public class Sale
+    {
+        public int Id { get; set; }
+        public DateTime SaleDate { get; set; }
+        public decimal TotalAmount { get; set; }
+        public List<SaleDetail> SaleDetails { get; set; } = new List<SaleDetail>();
+    }
+
+    public class SaleDetail
+    {
+        public int Id { get; set; }
+        public int SaleId { get; set; }
+        public Sale Sale { get; set; }
+        public int ProductId { get; set; }
+        public Product Product { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+    }
 }
+
