@@ -1,0 +1,19 @@
+﻿<Window x:Class="WpfApp1.EditMinQuantityWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <StackPanel Margin="15">
+        <TextBlock Text="Товар:" FontWeight="Bold"/>
+        <TextBlock x:Name="ProductNameTextBlock" Margin="0,5,0,10"/>
+
+        <TextBlock Text="Поточна мінімальна кількість:"/>
+        <TextBox x:Name="CurrentMinText" IsReadOnly="True" Margin="0,5,0,10"/>
+
+        <TextBlock Text="Нова мінімальна кількість:"/>
+        <TextBox x:Name="NewMinTextBox" Margin="0,5,0,15"/>
+
+        <Button Content="Зберегти" Click="SaveButton_Click" Width="100"/>
+    </StackPanel>
+</Window>

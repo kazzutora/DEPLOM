@@ -16,6 +16,13 @@
                     <TextBlock Grid.Row="0" Text="Товари з низьким залишком (кількість ≤ мінімальній)" 
                                Margin="5" FontWeight="Bold"/>
 
+                    <!-- Пошук -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+                        <TextBlock Text="Пошук:" VerticalAlignment="Center" Margin="5"/>
+                        <TextBox x:Name="SearchLowStockTextBox" Width="200" TextChanged="SearchLowStockTextBox_TextChanged"/>
+                    </StackPanel>
+
+                    <!-- Таблиця товарів -->
                     <DataGrid x:Name="LowStockDataGrid" Grid.Row="1" Margin="5" AutoGenerateColumns="False"
                               IsReadOnly="True" SelectionMode="Single">
                         <DataGrid.Columns>
@@ -35,12 +42,12 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
-                        <TextBlock Text="Пошук:" VerticalAlignment="Center" Margin="5"/>
-                        <TextBox x:Name="SearchLowStockTextBox" Width="200" TextChanged="SearchLowStockTextBox_TextChanged"/>
-                    </StackPanel>
-
+                    <!-- Кнопки управління -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+                        <!-- ДОДАНО КНОПКУ РЕДАГУВАННЯ -->
+                        <Button Content="Редагувати мін. кількість" Padding="10,5" Margin="0,0,10,0" 
+                                Click="EditMinQuantityBtn_Click" Background="#FF2196F3" Foreground="White"/>
+
                         <Button Content="Автоматичне замовлення" Padding="10,5" Margin="0,0,10,0" 
                                 Click="AutoOrderBtn_Click" Background="#FF4CAF50" Foreground="White"/>
                         <Button Content="Оновити" Padding="10,5" Click="RefreshBtn_Click"/>
@@ -85,6 +92,10 @@
 
                     <!-- Кнопки управління -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+                        <!-- ДОДАНО КНОПКУ РЕДАГУВАННЯ -->
+                        <Button Content="Редагувати мін. кількість" Padding="10,5" Margin="0,0,10,0" 
+                                Click="EditMinQuantityBtn_Click" Background="#FF2196F3" Foreground="White"/>
+
                         <Button Content="Оновити" Padding="10,5" Click="RefreshBtn_Click"/>
                     </StackPanel>
                 </Grid>

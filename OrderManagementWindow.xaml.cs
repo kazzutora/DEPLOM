@@ -18,6 +18,7 @@ namespace WpfApp1
             InitializeComponent();
             LoadData();
             LoadOrders();
+            SetupContextMenu();
         }
 
         private void LoadData()
@@ -424,6 +425,7 @@ namespace WpfApp1
 
         private void AutoOrderBtn_Click(object sender, RoutedEventArgs e)
         {
+            // Перевіряємо наявність товарів з низьким запасом
             if (lowStockProductsData == null || lowStockProductsData.Rows.Count == 0)
             {
                 MessageBox.Show("Немає товарів, що потребують замовлення.", "Інформація",
@@ -437,13 +439,17 @@ namespace WpfApp1
                 {
                     connection.Open();
 
+                    // Для кожного товару з низьким запасом
                     foreach (DataRow row in lowStockProductsData.Rows)
                     {
                         int productId = Convert.ToInt32(row["ProductID"]);
+                        // Розраховуємо кількість для замовлення (різниця між мінімумом і поточним запасом)
                         int orderQuantity = Convert.ToInt32(row["OrderQuantity"]);
                         decimal purchasePrice = Convert.ToDecimal(row["PurchasePrice"]);
-                        int? supplierId = row["SupplierID"] != DBNull.Value ? Convert.ToInt32(row["SupplierID"]) : (int?)null;
+                        int? supplierId = row["SupplierID"] != DBNull.Value ?
+                            Convert.ToInt32(row["SupplierID"]) : (int?)null;
 
+                        // Створюємо замовлення
                         SqlCommand cmd = new SqlCommand(
                             "INSERT INTO Orders (ProductID, QuantityOrdered, OrderDate, Status, PurchasePrice, SupplierID) " +
                             "VALUES (@ProductID, @QuantityOrdered, GETDATE(), 'Автоматичне', @PurchasePrice, @SupplierID)",
@@ -469,6 +475,109 @@ namespace WpfApp1
                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        private void SetupContextMenu()
+        {
+            // Для таблиці всіх товарів
+            ContextMenu menuAllProducts = new ContextMenu();
+            MenuItem editMinItem = new MenuItem { Header = "Редагувати мінімальну кількість" };
+            editMinItem.Click += EditMinQuantity_Click;
+            menuAllProducts.Items.Add(editMinItem);
+            AllProductsDataGrid.ContextMenu = menuAllProducts;
+
+            // Для таблиці товарів з низьким запасом
+            ContextMenu menuLowStock = new ContextMenu();
+            MenuItem editMinItem2 = new MenuItem { Header = "Редагувати мінімальну кількість" };
+            editMinItem2.Click += EditMinQuantity_Click;
+            menuLowStock.Items.Add(editMinItem2);
+            LowStockDataGrid.ContextMenu = menuLowStock;
+        }
+        private void EditMinQuantity_Click(object sender, RoutedEventArgs e)
+        {
+            DataGrid targetGrid = AllProductsDataGrid.ContextMenu.IsOpen ? AllProductsDataGrid :
+                                 LowStockDataGrid.ContextMenu.IsOpen ? LowStockDataGrid : null;
+
+            if (targetGrid?.SelectedItem == null) return;
+
+            DataRowView row = (DataRowView)targetGrid.SelectedItem;
+            int productId = Convert.ToInt32(row["ProductID"]);
+            string productName = row["Name"].ToString();
+            int currentMin = Convert.ToInt32(row["MinQuantity"]);
+
+            // Показуємо вікно редагування
+            var editDialog = new EditMinQuantityWindow(productName, currentMin);
+            if (editDialog.ShowDialog() == true)
+            {
+                UpdateMinQuantity(productId, editDialog.NewMinQuantity);
+            }
+        }
+
+        private void UpdateMinQuantity(int productId, int newMinQuantity)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    SqlCommand cmd = new SqlCommand(
+                        "UPDATE Products SET MinQuantity = @MinQuantity WHERE ProductID = @ProductID",
+                        connection);
+                    cmd.Parameters.AddWithValue("@MinQuantity", newMinQuantity);
+                    cmd.Parameters.AddWithValue("@ProductID", productId);
+                    cmd.ExecuteNonQuery();
+                }
+                LoadData(); // Оновлюємо дані
+                MessageBox.Show("Мінімальна кількість успішно оновлена!", "Успіх");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка оновлення: {ex.Message}", "Помилка");
+            }
+        }
+        private void EditMinQuantityBtn_Click(object sender, RoutedEventArgs e) // Перейменовано
+        {
+            DataGrid targetGrid = null;
+            if (AllProductsDataGrid.IsVisible)
+                targetGrid = AllProductsDataGrid;
+            else if (LowStockDataGrid.IsVisible)
+                targetGrid = LowStockDataGrid;
+
+            if (targetGrid?.SelectedItem == null)
+            {
+                MessageBox.Show("Будь ласка, оберіть товар для редагування",
+                               "Увага", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            DataRowView row = (DataRowView)targetGrid.SelectedItem;
+            EditMinQuantity(row); // Виклик методу редагування
+        }
+
+
+        // ДОДАНО МЕТОД РЕДАГУВАННЯ
+        private void EditMinQuantity(DataRowView row)
+        {
+            try
+            {
+                int productId = Convert.ToInt32(row["ProductID"]);
+                string productName = row["Name"].ToString();
+                int currentMin = Convert.ToInt32(row["MinQuantity"]);
+
+                // Викликаємо вікно редагування
+                var editDialog = new EditMinQuantityWindow(productName, currentMin);
+                if (editDialog.ShowDialog() == true)
+                {
+                    UpdateMinQuantity(productId, editDialog.NewMinQuantity);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка при редагуванні: {ex.Message}", "Помилка",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ДОДАНО МЕТОД ОНОВЛЕННЯ В БД
+      
 
         private void RefreshBtn_Click(object sender, RoutedEventArgs e)
         {
