@@ -4,11 +4,6 @@
         xmlns:local="clr-namespace:WpfApp1"
         Title="Управління продуктами" Height="500" Width="850">
 
-    <!-- Додаємо ресурс конвертера -->
-    <Window.Resources>
-        <local:StockVisibilityConverter x:Key="StockVisibilityConverter"/>
-    </Window.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -37,17 +32,27 @@
                             <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center"/>
                             <TextBlock Text="{Binding Category}" FontStyle="Italic" HorizontalAlignment="Center"/>
                             <TextBlock>
-    <Run Text="Кількість: "/>
-    <Run Text="{Binding Quantity}"/>
+                                <Run Text="Кількість: "/>
+                                <Run Text="{Binding Quantity}"/>
                             </TextBlock>
 
                             <TextBlock FontWeight="Bold">
-    <Run Text="Ціна: "/>
-    <Run Text="{Binding Price}"/>
+                                <Run Text="Ціна: "/>
+                                <Run Text="{Binding Price}"/>
                             </TextBlock>
-                            <TextBlock Text="Немає в наявності" Foreground="Red" FontWeight="Bold"
-                                       Visibility="{Binding Quantity, Converter={StaticResource StockVisibilityConverter}}" 
-                                       HorizontalAlignment="Center"/>
+                            <!-- Оновлений блок з тригерами -->
+                            <TextBlock Text="Немає в наявності" Foreground="Red" FontWeight="Bold" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Quantity}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
                     </Border>
                 </DataTemplate>

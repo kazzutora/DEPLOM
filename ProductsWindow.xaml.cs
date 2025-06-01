@@ -103,7 +103,7 @@ namespace WpfApp1
 
         private void EditProduct_Click(object sender, RoutedEventArgs e)
         {
-          
+
         }
 
 
@@ -192,7 +192,7 @@ namespace WpfApp1
         public decimal Price { get; set; }
         public string ImagePath { get; set; }
 
-        public BitmapImage ProductImage => 
+        public BitmapImage ProductImage =>
             !string.IsNullOrWhiteSpace(ImagePath) && File.Exists(ImagePath)
                 ? new BitmapImage(new Uri(ImagePath))
                 : null;

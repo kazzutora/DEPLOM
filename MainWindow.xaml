@@ -31,7 +31,7 @@
             <Button Content="📂 Категорії" Click="OpenCategories_Click" Padding="5"/>
             <Button Content="🚛 Постачальники" Click="OpenSuppliers_Click" Padding="5"/>
             <Button Content="💰 Продажі" Click="OpenSales_Click" Padding="5"/>
-          
+            <Button Content="💰 Замовлення" Click="OpenOrderManagementBtn_Click" Padding="5"/>
         </ToolBar>
 
         <!-- Основний контент -->

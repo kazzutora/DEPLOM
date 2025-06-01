@@ -30,6 +30,11 @@ namespace WpfApp1
         {
             Application.Current.Shutdown();
         }
+        private void OpenOrderManagementBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var orderWindow = new OrderManagementWindow();
+            orderWindow.ShowDialog();
+        }
 
         // Обробник для меню "Програма"
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)

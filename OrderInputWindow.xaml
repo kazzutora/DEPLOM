@@ -1,0 +1,62 @@
+﻿<Window x:Class="WpfApp1.OrderInputWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Замовлення товару" Height="450" Width="400">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Назва товару -->
+        <TextBlock Grid.Row="0" Text="Товар:" Margin="0,0,5,5"/>
+        <TextBlock x:Name="ProductNameTextBlock" Grid.Row="0" Grid.Column="1" Margin="0,0,0,5" FontWeight="Bold"/>
+
+        <!-- Ціна закупівлі -->
+        <TextBlock Grid.Row="1" Text="Ціна закупівлі:" Margin="0,0,5,5"/>
+        <TextBlock x:Name="PurchasePriceTextBlock" Grid.Row="1" Grid.Column="1" Margin="0,0,0,5"/>
+
+        <!-- Поточна кількість -->
+        <TextBlock Grid.Row="2" Text="Поточна кількість:" Margin="0,0,5,5"/>
+        <TextBlock x:Name="CurrentQuantityTextBlock" Grid.Row="2" Grid.Column="1" Margin="0,0,0,5"/>
+
+        <!-- Мінімальна кількість -->
+        <TextBlock Grid.Row="3" Text="Мінімальна кількість:" Margin="0,0,5,5"/>
+        <TextBlock x:Name="MinQuantityTextBlock" Grid.Row="3" Grid.Column="1" Margin="0,0,0,5"/>
+
+        <!-- Рекомендована кількість -->
+        <TextBlock Grid.Row="4" Text="Рекомендована кількість:" Margin="0,0,5,5"/>
+        <TextBlock x:Name="RecommendedQuantityTextBlock" Grid.Row="4" Grid.Column="1" Margin="0,0,0,5" FontWeight="Bold"/>
+
+        <!-- Кількість для замовлення -->
+        <TextBlock Grid.Row="5" Text="Кількість для замовлення:" Margin="0,0,5,5"/>
+        <TextBox x:Name="QuantityTextBox" Grid.Row="5" Grid.Column="1" Margin="0,0,0,5" TextChanged="QuantityTextBox_TextChanged"/>
+
+        <!-- Постачальник -->
+        <TextBlock Grid.Row="6" Text="Постачальник:" Margin="0,0,5,5"/>
+        <ComboBox x:Name="SupplierComboBox" Grid.Row="6" Grid.Column="1" Margin="0,0,0,5"/>
+
+        <!-- Очікувана дата поставки -->
+        <TextBlock Grid.Row="7" Text="Очікувана дата поставки:" Margin="0,0,5,5"/>
+        <DatePicker x:Name="ExpectedDatePicker" Grid.Row="7" Margin="149,0,0,5"/>
+
+        <!-- Загальна сума -->
+        <TextBlock Grid.Row="8" Text="Загальна сума:" Margin="0,0,5,5" FontWeight="Bold"/>
+        <TextBlock x:Name="TotalAmountTextBlock" Grid.Row="8" Grid.Column="1" Margin="0,0,0,5" FontWeight="Bold" Foreground="Green"/>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20">
+            <Button x:Name="ConfirmButton" Content="Підтвердити" Width="100" Margin="5" Click="ConfirmButton_Click"/>
+            <Button x:Name="CancelButton" Content="Скасувати" Width="100" Margin="5" Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
