@@ -73,7 +73,7 @@ namespace WpfApp1
             SalesWindow salesWindow = new SalesWindow();
             salesWindow.Show();
         }
-
+       
         // Обробник для меню "Про програму"
         private void About_Click(object sender, RoutedEventArgs e)
         {

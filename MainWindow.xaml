@@ -31,15 +31,12 @@
             <Button Content="📂 Категорії" Click="OpenCategories_Click" Padding="5"/>
             <Button Content="🚛 Постачальники" Click="OpenSuppliers_Click" Padding="5"/>
             <Button Content="💰 Продажі" Click="OpenSales_Click" Padding="5"/>
+          
         </ToolBar>
 
         <!-- Основний контент -->
         <Grid>
-            <Image Source="Images/logo.png" 
-       Stretch="Uniform" 
-       HorizontalAlignment="Center" 
-       VerticalAlignment="Center"/>
-            <Image Margin="273,75,273,75" Source="/Images/logo.jpg" Stretch="Fill"/>
+           
 
 
         </Grid>
