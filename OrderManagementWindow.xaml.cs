@@ -425,7 +425,6 @@ namespace WpfApp1
 
         private void AutoOrderBtn_Click(object sender, RoutedEventArgs e)
         {
-            // Перевіряємо наявність товарів з низьким запасом
             if (lowStockProductsData == null || lowStockProductsData.Rows.Count == 0)
             {
                 MessageBox.Show("Немає товарів, що потребують замовлення.", "Інформація",
@@ -435,39 +434,59 @@ namespace WpfApp1
 
             try
             {
+                int ordersCreated = 0;
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
 
-                    // Для кожного товару з низьким запасом
                     foreach (DataRow row in lowStockProductsData.Rows)
                     {
                         int productId = Convert.ToInt32(row["ProductID"]);
-                        // Розраховуємо кількість для замовлення (різниця між мінімумом і поточним запасом)
-                        int orderQuantity = Convert.ToInt32(row["OrderQuantity"]);
-                        decimal purchasePrice = Convert.ToDecimal(row["PurchasePrice"]);
-                        int? supplierId = row["SupplierID"] != DBNull.Value ?
-                            Convert.ToInt32(row["SupplierID"]) : (int?)null;
+                        int currentQuantity = Convert.ToInt32(row["Quantity"]);
+                        int minQuantity = Convert.ToInt32(row["MinQuantity"]);
 
-                        // Створюємо замовлення
+                        // Розрахунок необхідної кількості
+                        int orderQuantity = minQuantity - currentQuantity;
+
+                        // Перевірка, чи дійсно потрібне замовлення
+                        if (orderQuantity <= 0) continue;
+
+                        decimal purchasePrice = Convert.ToDecimal(row["PurchasePrice"]);
+                        int? supplierId = row["SupplierID"] != DBNull.Value
+                            ? Convert.ToInt32(row["SupplierID"])
+                            : (int?)null;
+
+                        // Очікувана дата поставки (наприклад, через 7 днів)
+                        DateTime expectedDate = DateTime.Now.AddDays(7);
+
+                        // Створення замовлення з правильним статусом
                         SqlCommand cmd = new SqlCommand(
-                            "INSERT INTO Orders (ProductID, QuantityOrdered, OrderDate, Status, PurchasePrice, SupplierID) " +
-                            "VALUES (@ProductID, @QuantityOrdered, GETDATE(), 'Автоматичне', @PurchasePrice, @SupplierID)",
+                            @"INSERT INTO Orders 
+                    (ProductID, QuantityOrdered, OrderDate, Status, 
+                     PurchasePrice, SupplierID, ExpectedDeliveryDate) 
+                    VALUES 
+                    (@ProductID, @QuantityOrdered, GETDATE(), 'Нове', 
+                     @PurchasePrice, @SupplierID, @ExpectedDeliveryDate)",
                             connection);
 
                         cmd.Parameters.AddWithValue("@ProductID", productId);
                         cmd.Parameters.AddWithValue("@QuantityOrdered", orderQuantity);
                         cmd.Parameters.AddWithValue("@PurchasePrice", purchasePrice);
                         cmd.Parameters.AddWithValue("@SupplierID", (object)supplierId ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ExpectedDeliveryDate", expectedDate);
+
                         cmd.ExecuteNonQuery();
+                        ordersCreated++;
                     }
-
-                    MessageBox.Show($"Створено {lowStockProductsData.Rows.Count} автоматичних замовлень!",
-                                  "Успіх", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                    LoadData();
-                    LoadOrders();
                 }
+
+                MessageBox.Show($"Створено {ordersCreated} автоматичних замовлень!\n" +
+                              $"Кожне замовлення на кількість, необхідну для досягнення мінімального запасу.",
+                              "Успіх", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Оновлюємо дані
+                LoadData();
+                LoadOrders();
             }
             catch (Exception ex)
             {
