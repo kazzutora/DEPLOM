@@ -168,6 +168,12 @@
 
                         <Button x:Name="GenerateReportBtn" Content="Згенерувати звіт" 
                                 Click="GenerateReportBtn_Click" Margin="10,0" Padding="10,5"/>
+                        <Button x:Name="ExportPdfBtn" 
+        Content="Експорт у PDF" 
+        Click="ExportPdfBtn_Click" 
+        Margin="0" 
+        Padding="3"
+        HorizontalAlignment="Right"/>
                     </StackPanel>
 
                     <!-- Підсумкова статистика -->

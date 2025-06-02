@@ -8,6 +8,7 @@ using System.Windows.Media;
 using iTextSharp.text.pdf;
 using iTextSharp.text;
 using System.IO;
+using System.Diagnostics;
 
 
 namespace WpfApp1
@@ -810,16 +811,18 @@ namespace WpfApp1
                 PdfWriter writer = PdfWriter.GetInstance(document, new FileStream(filePath, FileMode.Create));
                 document.Open();
 
-                // Шрифти (потрібно встановити шрифт з підтримкою кирилиці)
-                string fontPath = Environment.GetFolderPath(Environment.SpecialFolder.Fonts) + "\\arial.ttf";
+                // Шрифти з підтримкою кирилиці
+                string fontPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
                 BaseFont baseFont = BaseFont.CreateFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
                 Font titleFont = new Font(baseFont, 18, Font.BOLD);
                 Font headerFont = new Font(baseFont, 14, Font.BOLD);
                 Font normalFont = new Font(baseFont, 12);
+                Font boldFont = new Font(baseFont, 12, Font.BOLD);
 
                 // Заголовок
                 Paragraph title = new Paragraph("ФІНАНСОВИЙ ЗВІТ", titleFont);
                 title.Alignment = Element.ALIGN_CENTER;
+                title.SpacingAfter = 20;
                 document.Add(title);
 
                 // Період звіту
@@ -827,69 +830,136 @@ namespace WpfApp1
                 document.Add(Chunk.NEWLINE);
 
                 // Статистика
-                document.Add(new Paragraph("ЗАГАЛЬНА СТАТИСТИКА", headerFont));
+                Paragraph statsHeader = new Paragraph("ЗАГАЛЬНА СТАТИСТИКА", headerFont);
+                statsHeader.SpacingAfter = 10; // Додаємо відступ після заголовка
+                document.Add(statsHeader);
+
                 document.Add(new Paragraph($"Загальний дохід: {reportData.TotalRevenue:N2} грн", normalFont));
                 document.Add(new Paragraph($"Витрати на закупівлю: {reportData.TotalExpenses:N2} грн", normalFont));
-                document.Add(new Paragraph($"Чистий прибуток: {reportData.NetProfit:N2} грн", normalFont));
+
+                // Чистий прибуток з кольором
+                Paragraph netProfitParagraph = new Paragraph(
+                    $"Чистий прибуток: {reportData.NetProfit:N2} грн",
+                    reportData.NetProfit >= 0
+                        ? new Font(baseFont, 12, Font.BOLD, BaseColor.GREEN)
+                        : new Font(baseFont, 12, Font.BOLD, BaseColor.RED)
+                );
+                document.Add(netProfitParagraph);
+
                 document.Add(new Paragraph($"Кількість продажів: {reportData.SalesCount}", normalFont));
                 document.Add(Chunk.NEWLINE);
 
                 // Таблиця продажів
-                document.Add(new Paragraph("ДЕТАЛІЗАЦІЯ ПРОДАЖІВ", headerFont));
+                Paragraph salesHeader = new Paragraph("ДЕТАЛІЗАЦІЯ ПРОДАЖІВ", headerFont);
+                salesHeader.SpacingBefore = 15; // Відступ перед заголовком таблиці
+                salesHeader.SpacingAfter = 8;   // Відступ після заголовка таблиці
+                document.Add(salesHeader);
                 PdfPTable salesTable = new PdfPTable(6);
                 salesTable.WidthPercentage = 100;
+                salesTable.SetWidths(new float[] { 1.5f, 3f, 1.5f, 2f, 2f, 2f });
 
                 // Заголовки стовпців
-                salesTable.AddCell(new Phrase("Дата", normalFont));
-                salesTable.AddCell(new Phrase("Товар", normalFont));
-                salesTable.AddCell(new Phrase("Кількість", normalFont));
-                salesTable.AddCell(new Phrase("Ціна продажу", normalFont));
-                salesTable.AddCell(new Phrase("Собівартість", normalFont));
-                salesTable.AddCell(new Phrase("Прибуток", normalFont));
+                AddCell(salesTable, "Дата", boldFont);
+                AddCell(salesTable, "Товар", boldFont);
+                AddCell(salesTable, "Кількість", boldFont);
+                AddCell(salesTable, "Ціна продажу", boldFont);
+                AddCell(salesTable, "Собівартість", boldFont);
+                AddCell(salesTable, "Прибуток", boldFont);
 
-                // Дані
+                // Дані продажів
+                decimal totalProfit = 0;
                 foreach (DataRow row in reportData.SalesData.Rows)
                 {
-                    salesTable.AddCell(new Phrase(Convert.ToDateTime(row["SaleDate"]).ToString("dd.MM.yyyy"), normalFont));
-                    salesTable.AddCell(new Phrase(row["ProductName"].ToString(), normalFont));
-                    salesTable.AddCell(new Phrase(row["QuantitySold"].ToString(), normalFont));
-                    salesTable.AddCell(new Phrase(Convert.ToDecimal(row["SalePrice"]).ToString("N2") + " грн", normalFont));
-                    salesTable.AddCell(new Phrase(Convert.ToDecimal(row["PurchasePrice"]).ToString("N2") + " грн", normalFont));
-                    salesTable.AddCell(new Phrase(Convert.ToDecimal(row["Profit"]).ToString("N2") + " грн", normalFont));
+                    AddCell(salesTable, Convert.ToDateTime(row["SaleDate"]).ToString("dd.MM.yyyy"), normalFont);
+                    AddCell(salesTable, row["ProductName"].ToString(), normalFont);
+                    AddCell(salesTable, row["QuantitySold"].ToString(), normalFont);
+                    AddCell(salesTable, Convert.ToDecimal(row["SalePrice"]).ToString("N2") + " грн", normalFont);
+                    AddCell(salesTable, Convert.ToDecimal(row["PurchasePrice"]).ToString("N2") + " грн", normalFont);
+
+                    decimal profit = Convert.ToDecimal(row["Profit"]);
+                    totalProfit += profit;
+                    AddCell(salesTable, profit.ToString("N2") + " грн", normalFont);
                 }
+
+                // Підсумковий рядок
+                AddCell(salesTable, "РАЗОМ:", boldFont);
+                AddCell(salesTable, "", boldFont);
+                AddCell(salesTable, "", boldFont);
+                AddCell(salesTable, "", boldFont);
+                AddCell(salesTable, "", boldFont);
+                AddCell(salesTable, totalProfit.ToString("N2") + " грн", boldFont);
 
                 document.Add(salesTable);
                 document.Add(Chunk.NEWLINE);
 
                 // Таблиця витрат
-                document.Add(new Paragraph("ДЕТАЛІЗАЦІЯ ВИТРАТ НА ЗАКУПІВЛЮ", headerFont));
+                Paragraph expensesHeader = new Paragraph("ДЕТАЛІЗАЦІЯ ВИТРАТ НА ЗАКУПІВЛЮ", headerFont);
+                expensesHeader.SpacingBefore = 15; // Відступ перед заголовком таблиці
+                expensesHeader.SpacingAfter = 8;   // Відступ після заголовка таблиці
+                document.Add(expensesHeader);
                 PdfPTable expensesTable = new PdfPTable(4);
                 expensesTable.WidthPercentage = 100;
+                expensesTable.SetWidths(new float[] { 1.5f, 3f, 1.5f, 2f });
 
                 // Заголовки стовпців
-                expensesTable.AddCell(new Phrase("Дата", normalFont));
-                expensesTable.AddCell(new Phrase("Товар", normalFont));
-                expensesTable.AddCell(new Phrase("Кількість", normalFont));
-                expensesTable.AddCell(new Phrase("Сума", normalFont));
+                AddCell(expensesTable, "Дата", boldFont);
+                AddCell(expensesTable, "Товар", boldFont);
+                AddCell(expensesTable, "Кількість", boldFont);
+                AddCell(expensesTable, "Сума", boldFont);
 
-                // Дані
+                // Дані витрат
+                decimal totalExpense = 0;
                 foreach (DataRow row in reportData.ExpensesData.Rows)
                 {
-                    expensesTable.AddCell(new Phrase(Convert.ToDateTime(row["OrderDate"]).ToString("dd.MM.yyyy"), normalFont));
-                    expensesTable.AddCell(new Phrase(row["ProductName"].ToString(), normalFont));
-                    expensesTable.AddCell(new Phrase(row["QuantityOrdered"].ToString(), normalFont));
-                    expensesTable.AddCell(new Phrase(Convert.ToDecimal(row["TotalExpense"]).ToString("N2") + " грн", normalFont));
+                    AddCell(expensesTable, Convert.ToDateTime(row["OrderDate"]).ToString("dd.MM.yyyy"), normalFont);
+                    AddCell(expensesTable, row["ProductName"].ToString(), normalFont);
+                    AddCell(expensesTable, row["QuantityOrdered"].ToString(), normalFont);
+
+                    decimal expense = Convert.ToDecimal(row["TotalExpense"]);
+                    totalExpense += expense;
+                    AddCell(expensesTable, expense.ToString("N2") + " грн", normalFont);
                 }
 
-                document.Add(expensesTable);
+                // Підсумковий рядок
+                AddCell(expensesTable, "РАЗОМ:", boldFont);
+                AddCell(expensesTable, "", boldFont);
+                AddCell(expensesTable, "", boldFont);
+                AddCell(expensesTable, totalExpense.ToString("N2") + " грн", boldFont);
 
+                document.Add(expensesTable);
                 document.Close();
-                MessageBox.Show($"Звіт збережено у файл: {filePath}", "Експорт завершено");
+
+                // Відкриваємо PDF
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = filePath,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не вдалося відкрити PDF: {ex.Message}", "Помилка");
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Помилка при створенні PDF: {ex.Message}", "Помилка");
             }
+        }
+
+        // Допоміжний метод для додавання комірок з вирівнюванням
+        private void AddCell(PdfPTable table, string text, Font font, int horizontalAlignment = Element.ALIGN_CENTER)
+        {
+            PdfPCell cell = new PdfPCell(new Phrase(text, font));
+            cell.HorizontalAlignment = horizontalAlignment;
+            cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+            cell.PaddingTop = 4;    // Верхній відступ
+            cell.PaddingBottom = 4; // Нижній відступ
+            cell.PaddingLeft = 3;   // Лівий відступ
+            cell.PaddingRight = 3;  // Правий відступ
+            table.AddCell(cell);
         }
         private class FinancialReportData
         {
