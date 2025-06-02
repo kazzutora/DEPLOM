@@ -30,6 +30,9 @@
             <TextBlock Text="Постачальник:" FontWeight="Bold"/>
             <ComboBox x:Name="SupplierComboBox" Margin="0,5,0,10"/>
 
+            <TextBlock Text="Ціна закупівлі" FontWeight="Bold"/>
+            <TextBox x:Name="PurchasePriceTextBox" />
+
             <!-- Відображення вибраного фото -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,30">
                 <Image x:Name="ProductImage" Width="150" Height="150" Stretch="UniformToFill" Margin="10"/>
@@ -43,5 +46,6 @@
             <Button Content="Зберегти" Click="SaveButton_Click" Background="Green" Foreground="White" Width="100" Margin="5"/>
             <Button Content="Скасувати" Click="CancelButton_Click" Background="Gray" Foreground="White" Width="100" Margin="5"/>
         </StackPanel>
+        
     </Grid>
 </Window>

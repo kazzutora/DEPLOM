@@ -35,10 +35,16 @@
                                 <Run Text="Кількість: "/>
                                 <Run Text="{Binding Quantity}"/>
                             </TextBlock>
-
+                            <TextBlock HorizontalAlignment="Center">
+                                <Run Text="Ціна закупівлі: "/>
+                                <!-- Исправленная строка -->
+                                <Run Text="{Binding PurchasePrice, StringFormat={}{0:N2}}"/>
+                                <Run Text=" грн"/>
+                            </TextBlock>
                             <TextBlock FontWeight="Bold">
                                 <Run Text="Ціна: "/>
-                                <Run Text="{Binding Price}"/>
+                                <!-- Добавлен формат для цены -->
+                                <Run Text="{Binding Price, StringFormat={}{0:N2}}"/>
                             </TextBlock>
                             <!-- Оновлений блок з тригерами -->
                             <TextBlock Text="Немає в наявності" Foreground="Red" FontWeight="Bold" HorizontalAlignment="Center">

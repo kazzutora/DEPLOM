@@ -1064,6 +1064,16 @@ namespace WpfApp1
             footer.WriteSelectedRows(0, -1, document.LeftMargin, document.BottomMargin, writer.DirectContent);
         }
 
+        public class FinancialReportItem
+        {
+            public DateTime SaleDate { get; set; }
+            public string ProductName { get; set; }
+            public int QuantitySold { get; set; }
+            public decimal SalePrice { get; set; }
+            public decimal PurchasePrice { get; set; }
+            public decimal Profit { get; set; } // SalePrice - PurchasePrice
+        }
+
 
         public void OnParagraph(PdfWriter writer, Document document, float paragraphPosition) { }
         public void OnParagraphEnd(PdfWriter writer, Document document, float paragraphPosition) { }

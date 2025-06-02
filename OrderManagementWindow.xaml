@@ -142,9 +142,10 @@
 
                     <!-- Кнопки керування -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
-                        <Button x:Name="ConfirmOrderBtn" Content="Підтвердити" Width="120" Margin="5" Click="ConfirmOrderBtn_Click"/>
-                        <Button x:Name="CancelOrderBtn" Content="Скасувати" Width="120" Margin="5" Click="CancelOrderBtn_Click"/>
+                        <Button x:Name="ConfirmOrderBtn" Content="Підтвердити" Width="120" Click="ConfirmOrderBtn_Click"/>
+                        <Button x:Name="CancelOrderBtn" Content="Скасувати" Width="118" Margin="5" Click="CancelOrderBtn_Click" Height="24"/>
                         <Button x:Name="RefreshOrdersBtn" Content="Оновити" Width="80" Margin="5" Click="RefreshOrdersBtn_Click"/>
+                        <Button x:Name="DeleteOrderBtn"  Content="Видалити" Width="78" Margin="5" Click="DeleteOrderBtn_Click" />
                     </StackPanel>
                 </Grid>
             </TabItem>

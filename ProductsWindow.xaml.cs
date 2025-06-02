@@ -30,17 +30,18 @@ namespace WpfApp1
                 {
                     connection.Open();
                     string query = @"
-                    SELECT 
-                        Products.ProductID, 
-                        Products.Name, 
-                        Categories.CategoryName AS Category, 
-                        Products.Quantity, 
-                        Products.Price, 
-                        Products.ImagePath 
-                    FROM 
-                        Products
-                    LEFT JOIN 
-                        Categories ON Products.CategoryID = Categories.CategoryID";
+                      SELECT 
+                Products.ProductID, 
+                Products.Name, 
+                Categories.CategoryName AS Category, 
+                Products.Quantity, 
+                Products.Price, 
+                Products.ImagePath,  
+                Products.PurchasePrice
+            FROM 
+                Products
+            LEFT JOIN 
+                Categories ON Products.CategoryID = Categories.CategoryID";
 
                     if (!string.IsNullOrEmpty(category) && category != "Усі категорії")
                     {
@@ -65,6 +66,7 @@ namespace WpfApp1
                                     Name = reader["Name"].ToString(),
                                     Category = reader["Category"].ToString(),
                                     Quantity = Convert.ToInt32(reader["Quantity"]),
+                                    PurchasePrice = Convert.ToDecimal(reader["PurchasePrice"]),
                                     Price = Convert.ToDecimal(reader["Price"]),
                                     ImagePath = File.Exists(imagePath) ? imagePath : null
                                 });
@@ -111,37 +113,56 @@ namespace WpfApp1
         {
             if (ProductsListBox.SelectedItem is Product selectedProduct)
             {
-                if (MessageBox.Show($"Are you sure you want to delete the product '{selectedProduct.Name}'?",
-                                    "Confirmation", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                try
                 {
-                    try
+                    // Проверяем есть ли связанные заказы
+                    if (HasRelatedOrders(selectedProduct.ProductID))
                     {
-                        using (SqlConnection connection = new SqlConnection(connectionString))
-                        {
-                            connection.Open();
-                            string deleteQuery = "DELETE FROM Products WHERE ProductID = @ProductID";
+                        MessageBox.Show("Неможливо видалити продукт, оскільки існують пов'язані замовлення.",
+                                        "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
 
-                            using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                    using (SqlConnection connection = new SqlConnection(connectionString))
+                    {
+                        connection.Open();
+                        string query = "DELETE FROM Products WHERE ProductID = @ProductID";
+                        using (SqlCommand command = new SqlCommand(query, connection))
+                        {
+                            command.Parameters.AddWithValue("@ProductID", selectedProduct.ProductID);
+                            int rowsAffected = command.ExecuteNonQuery();
+
+                            if (rowsAffected > 0)
                             {
-                                command.Parameters.AddWithValue("@ProductID", selectedProduct.ProductID);
-                                command.ExecuteNonQuery();
+                                MessageBox.Show("Продукт успішно видалено!");
+                                LoadProductsFromDatabase();
                             }
                         }
-
-                        products.Remove(selectedProduct);
-                        ProductsListBox.Items.Refresh();
-
-                        MessageBox.Show("Product deleted successfully.");
                     }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error deleting product: {ex.Message}");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Помилка при видаленні продукту: {ex.Message}");
                 }
             }
             else
             {
-                MessageBox.Show("Please select a product to delete.");
+                MessageBox.Show("Будь ласка, виберіть продукт для видалення.");
+            }
+        }
+
+        private bool HasRelatedOrders(int productId)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                string query = "SELECT COUNT(*) FROM Orders WHERE ProductID = @ProductID";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@ProductID", productId);
+                    int orderCount = (int)command.ExecuteScalar();
+                    return orderCount > 0;
+                }
             }
         }
         private void LoadCategories()
@@ -190,6 +211,8 @@ namespace WpfApp1
         public string Category { get; set; }
         public int Quantity { get; set; }
         public decimal Price { get; set; }
+        public string Description { get; set; } 
+        public decimal PurchasePrice { get; set; }
         public string ImagePath { get; set; }
 
         public BitmapImage ProductImage =>

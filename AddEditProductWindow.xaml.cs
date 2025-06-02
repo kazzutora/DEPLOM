@@ -29,6 +29,7 @@ namespace WpfApp1
                 QuantityTextBox.Text = editingProduct["Quantity"].ToString();
                 PriceTextBox.Text = editingProduct["Price"].ToString();
                 SupplierComboBox.SelectedItem = editingProduct["Supplier"].ToString();
+                PurchasePriceTextBox.Text = editingProduct["PurchasePrice"].ToString();
 
                 // If there is an image associated with the product, display it
                 if (editingProduct["Image"] != DBNull.Value)
@@ -124,27 +125,29 @@ namespace WpfApp1
                     {
                         // Adding new product
                         query = @"
-                    INSERT INTO Products (Name, CategoryID, Quantity, Price, SupplierID, ImagePath)
-                    VALUES (@Name, 
-                        (SELECT TOP 1 CategoryID FROM Categories WHERE CategoryName = @Category), 
-                        @Quantity, 
-                        @Price, 
-                        (SELECT SupplierID FROM Suppliers WHERE Name = @Supplier), 
-                        @ImagePath)";
+                   INSERT INTO Products (Name, CategoryID, Quantity, Price, SupplierID, ImagePath, PurchasePrice)
+VALUES (@Name, 
+    (SELECT TOP 1 CategoryID FROM Categories WHERE CategoryName = @Category), 
+    @Quantity, 
+    @Price, 
+    (SELECT SupplierID FROM Suppliers WHERE Name = @Supplier), 
+    @ImagePath, 
+    @PurchasePrice)";
                     }
                     else
                     {
                         // Updating existing product
                         query = @"
-                    UPDATE Products
-                    SET 
-                        Name = @Name,
-                        CategoryID = (SELECT CategoryID FROM Categories WHERE CategoryName = @Category),
-                        Quantity = @Quantity,
-                        Price = @Price,
-                        SupplierID = (SELECT SupplierID FROM Suppliers WHERE Name = @Supplier),
-                        ImagePath = @ImagePath
-                    WHERE ProductID = @ProductID";
+                  UPDATE Products
+SET 
+    Name = @Name,
+    CategoryID = (SELECT CategoryID FROM Categories WHERE CategoryName = @Category),
+    Quantity = @Quantity,
+    Price = @Price,
+    SupplierID = (SELECT SupplierID FROM Suppliers WHERE Name = @Supplier),
+    ImagePath = @ImagePath,
+    PurchasePrice = @PurchasePrice
+WHERE ProductID = @ProductID";
                     }
 
                     SqlCommand command = new SqlCommand(query, connection);
@@ -153,6 +156,7 @@ namespace WpfApp1
                     command.Parameters.AddWithValue("@Quantity", int.Parse(QuantityTextBox.Text));
                     command.Parameters.AddWithValue("@Price", decimal.Parse(PriceTextBox.Text));
                     command.Parameters.AddWithValue("@Supplier", SupplierComboBox.SelectedItem.ToString());
+                    command.Parameters.AddWithValue("@PurchasePrice", decimal.Parse(PurchasePriceTextBox.Text));
 
                     // Store the image path instead of the image bytes
                     command.Parameters.AddWithValue("@ImagePath", string.IsNullOrWhiteSpace(productImagePath) ? (object)DBNull.Value : productImagePath);

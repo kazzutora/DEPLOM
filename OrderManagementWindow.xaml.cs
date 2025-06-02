@@ -109,8 +109,61 @@ namespace WpfApp1
             bool isSelected = OrdersDataGrid.SelectedItem != null;
             ConfirmOrderBtn.IsEnabled = isSelected;
             CancelOrderBtn.IsEnabled = isSelected;
+            DeleteOrderBtn.IsEnabled = isSelected;
+        }
+        private void DeleteOrderBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (OrdersDataGrid.SelectedItem == null) return;
+
+            DataRowView row = (DataRowView)OrdersDataGrid.SelectedItem;
+            int orderId = Convert.ToInt32(row["OrderID"]);
+            string status = row["Status"].ToString();
+
+            // Заборона видаляти підтверджені замовлення
+            if (status == "Підтверджено")
+            {
+                MessageBox.Show("Не можна видаляти підтверджені замовлення!",
+                                "Помилка",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                return;
+            }
+
+            if (MessageBox.Show($"Видалити замовлення #{orderId}? Цю дію неможливо скасувати.",
+                                "Підтвердження видалення",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                DeleteOrder(orderId);
+            }
         }
 
+        private void DeleteOrder(int orderId)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    SqlCommand cmd = new SqlCommand(
+                        "DELETE FROM Orders WHERE OrderID = @OrderID",
+                        connection);
+
+                    cmd.Parameters.AddWithValue("@OrderID", orderId);
+                    int rowsAffected = cmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        MessageBox.Show($"Замовлення #{orderId} видалено!", "Успіх");
+                        LoadOrders(); // Оновлюємо список
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка видалення: {ex.Message}", "Помилка");
+            }
+        }
         private void ConfirmOrderBtn_Click(object sender, RoutedEventArgs e)
         {
             if (OrdersDataGrid.SelectedItem == null) return;
@@ -249,6 +302,7 @@ namespace WpfApp1
 
         private void ApplyOrdersFilter()
         {
+            
             if (ordersData == null) return;
 
             string statusFilter = "";
@@ -256,8 +310,10 @@ namespace WpfApp1
                 StatusFilterComboBox.SelectedItem is ComboBoxItem selectedItem)
             {
                 string status = selectedItem.Content.ToString();
-                statusFilter = $"Status = '{status}'";
+                if (ordersData.Columns.Contains("Status"))
+                    statusFilter = $"Status = '{status}'";
             }
+
 
             string searchText = SearchOrderTextBox.Text.Replace("'", "''");
             string searchFilter = string.IsNullOrEmpty(searchText)
