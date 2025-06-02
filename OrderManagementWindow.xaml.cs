@@ -3,12 +3,19 @@ using System;
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
+using static WpfApp1.PdfPageEventHandler;
+using System.Windows.Media;
+using iTextSharp.text.pdf;
+using iTextSharp.text;
+using System.IO;
+
 
 namespace WpfApp1
 {
     public partial class OrderManagementWindow : Window
     {
         private string connectionString = "Server=localhost;Database=StoreInventoryDB;Integrated Security=True;Encrypt=False;";
+        private FinancialReportData currentReportData;
         private DataTable productsData;
         private DataTable lowStockProductsData;
         private DataTable ordersData;
@@ -16,6 +23,8 @@ namespace WpfApp1
         public OrderManagementWindow()
         {
             InitializeComponent();
+            StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
+            EndDatePicker.SelectedDate = DateTime.Today;
             LoadData();
             LoadOrders();
             SetupContextMenu();
@@ -650,9 +659,249 @@ namespace WpfApp1
                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        private void GenerateReportBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (!StartDatePicker.SelectedDate.HasValue || !EndDatePicker.SelectedDate.HasValue)
+            {
+                MessageBox.Show("Оберіть період для формування звіту");
+                return;
+            }
 
+            DateTime startDate = StartDatePicker.SelectedDate.Value.Date;
+            DateTime endDate = EndDatePicker.SelectedDate.Value.Date.AddDays(1);
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    // 1. ЗАПИТ ДЛЯ ПРОДАЖІВ
+                    string salesQuery = @"
+                        SELECT 
+                            s.SaleDate,
+                            p.Name AS ProductName,
+                            s.QuantitySold,
+                            p.Price AS SalePrice,
+                            p.PurchasePrice,
+                            (p.Price - p.PurchasePrice) * s.QuantitySold AS Profit
+                        FROM Sales s
+                        JOIN Products p ON s.ProductID = p.ProductID
+                        WHERE s.SaleDate BETWEEN @StartDate AND @EndDate
+                        ORDER BY s.SaleDate DESC";
+
+                    SqlDataAdapter salesAdapter = new SqlDataAdapter(salesQuery, connection);
+                    salesAdapter.SelectCommand.Parameters.AddWithValue("@StartDate", startDate);
+                    salesAdapter.SelectCommand.Parameters.AddWithValue("@EndDate", endDate);
+
+                    DataTable salesData = new DataTable();
+                    salesAdapter.Fill(salesData);
+
+                    // 2. ЗАПИТ ДЛЯ ВИТРАТ НА ЗАКУПІВЛЮ
+                    string expensesQuery = @"
+                        SELECT 
+                            o.OrderDate,
+                            p.Name AS ProductName,
+                            o.QuantityOrdered,
+                            o.PurchasePrice,
+                            (o.QuantityOrdered * o.PurchasePrice) AS TotalExpense
+                        FROM Orders o
+                        JOIN Products p ON o.ProductID = p.ProductID
+                        WHERE o.Status = 'Підтверджено'
+                            AND o.OrderDate BETWEEN @StartDate AND @EndDate";
+
+                    SqlDataAdapter expensesAdapter = new SqlDataAdapter(expensesQuery, connection);
+                    expensesAdapter.SelectCommand.Parameters.AddWithValue("@StartDate", startDate);
+                    expensesAdapter.SelectCommand.Parameters.AddWithValue("@EndDate", endDate);
+
+                    DataTable expensesData = new DataTable();
+                    expensesAdapter.Fill(expensesData);
+
+                    // 3. РОЗРАХУНКИ
+                    decimal totalRevenue = 0;
+                    decimal totalExpenses = 0;
+                    int salesCount = 0;
+
+                    // Продажі
+                    foreach (DataRow row in salesData.Rows)
+                    {
+                        decimal salePrice = Convert.ToDecimal(row["SalePrice"]);
+                        int quantity = Convert.ToInt32(row["QuantitySold"]);
+                        totalRevenue += salePrice * quantity;
+                        salesCount += quantity;
+                    }
+
+                    // Витрати (замовлення)
+                    foreach (DataRow row in expensesData.Rows)
+                    {
+                        decimal expense = Convert.ToDecimal(row["TotalExpense"]);
+                        totalExpenses += expense;
+                    }
+
+                    // 4. ОНОВЛЕННЯ ІНТЕРФЕЙСУ
+                    ReportDataGrid.ItemsSource = salesData.DefaultView;
+
+                    TotalRevenueText.Text = totalRevenue.ToString("N2") + " грн";
+                    TotalExpensesText.Text = totalExpenses.ToString("N2") + " грн";
+
+                    decimal netProfit = totalRevenue - totalExpenses;
+                    NetProfitText.Text = netProfit.ToString("N2") + " грн";
+                    SalesCountText.Text = salesCount.ToString();
+
+                    NetProfitText.Foreground = netProfit >= 0 ? Brushes.Green : Brushes.Red;
+
+                    // 5. ЗБЕРЕЖЕННЯ ДАНИХ ДЛЯ ЕКСПОРТУ
+                    currentReportData = new FinancialReportData
+                    {
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        SalesData = salesData,
+                        ExpensesData = expensesData,
+                        TotalRevenue = totalRevenue,
+                        TotalExpenses = totalExpenses,
+                        NetProfit = netProfit,
+                        SalesCount = salesCount
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка генерації звіту: {ex.Message}", "Помилка");
+                ClearReportData();
+            }
+        }
+
+        private void ClearReportData()
+        {
+            ReportDataGrid.ItemsSource = null;
+            TotalRevenueText.Text = "0.00 грн";
+            TotalExpensesText.Text = "0.00 грн";
+            NetProfitText.Text = "0.00 грн";
+            SalesCountText.Text = "0";
+            NetProfitText.Foreground = Brushes.Black;
+        }
         // ДОДАНО МЕТОД ОНОВЛЕННЯ В БД
-      
+        private void ExportPdfBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentReportData == null)
+            {
+                MessageBox.Show("Спочатку згенеруйте звіт", "Помилка");
+                return;
+            }
+
+            var saveDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "PDF files (*.pdf)|*.pdf",
+                FileName = $"FinancialReport_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+            };
+
+            if (saveDialog.ShowDialog() == true)
+            {
+                GeneratePdfReport(saveDialog.FileName, currentReportData);
+            }
+        }
+
+        private void GeneratePdfReport(string filePath, FinancialReportData reportData)
+        {
+            try
+            {
+                // Створення документа
+                Document document = new Document(PageSize.A4.Rotate(), 25, 25, 30, 30);
+                PdfWriter writer = PdfWriter.GetInstance(document, new FileStream(filePath, FileMode.Create));
+                document.Open();
+
+                // Шрифти (потрібно встановити шрифт з підтримкою кирилиці)
+                string fontPath = Environment.GetFolderPath(Environment.SpecialFolder.Fonts) + "\\arial.ttf";
+                BaseFont baseFont = BaseFont.CreateFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                Font titleFont = new Font(baseFont, 18, Font.BOLD);
+                Font headerFont = new Font(baseFont, 14, Font.BOLD);
+                Font normalFont = new Font(baseFont, 12);
+
+                // Заголовок
+                Paragraph title = new Paragraph("ФІНАНСОВИЙ ЗВІТ", titleFont);
+                title.Alignment = Element.ALIGN_CENTER;
+                document.Add(title);
+
+                // Період звіту
+                document.Add(new Paragraph($"Період: з {reportData.StartDate:dd.MM.yyyy} по {reportData.EndDate.AddDays(-1):dd.MM.yyyy}", normalFont));
+                document.Add(Chunk.NEWLINE);
+
+                // Статистика
+                document.Add(new Paragraph("ЗАГАЛЬНА СТАТИСТИКА", headerFont));
+                document.Add(new Paragraph($"Загальний дохід: {reportData.TotalRevenue:N2} грн", normalFont));
+                document.Add(new Paragraph($"Витрати на закупівлю: {reportData.TotalExpenses:N2} грн", normalFont));
+                document.Add(new Paragraph($"Чистий прибуток: {reportData.NetProfit:N2} грн", normalFont));
+                document.Add(new Paragraph($"Кількість продажів: {reportData.SalesCount}", normalFont));
+                document.Add(Chunk.NEWLINE);
+
+                // Таблиця продажів
+                document.Add(new Paragraph("ДЕТАЛІЗАЦІЯ ПРОДАЖІВ", headerFont));
+                PdfPTable salesTable = new PdfPTable(6);
+                salesTable.WidthPercentage = 100;
+
+                // Заголовки стовпців
+                salesTable.AddCell(new Phrase("Дата", normalFont));
+                salesTable.AddCell(new Phrase("Товар", normalFont));
+                salesTable.AddCell(new Phrase("Кількість", normalFont));
+                salesTable.AddCell(new Phrase("Ціна продажу", normalFont));
+                salesTable.AddCell(new Phrase("Собівартість", normalFont));
+                salesTable.AddCell(new Phrase("Прибуток", normalFont));
+
+                // Дані
+                foreach (DataRow row in reportData.SalesData.Rows)
+                {
+                    salesTable.AddCell(new Phrase(Convert.ToDateTime(row["SaleDate"]).ToString("dd.MM.yyyy"), normalFont));
+                    salesTable.AddCell(new Phrase(row["ProductName"].ToString(), normalFont));
+                    salesTable.AddCell(new Phrase(row["QuantitySold"].ToString(), normalFont));
+                    salesTable.AddCell(new Phrase(Convert.ToDecimal(row["SalePrice"]).ToString("N2") + " грн", normalFont));
+                    salesTable.AddCell(new Phrase(Convert.ToDecimal(row["PurchasePrice"]).ToString("N2") + " грн", normalFont));
+                    salesTable.AddCell(new Phrase(Convert.ToDecimal(row["Profit"]).ToString("N2") + " грн", normalFont));
+                }
+
+                document.Add(salesTable);
+                document.Add(Chunk.NEWLINE);
+
+                // Таблиця витрат
+                document.Add(new Paragraph("ДЕТАЛІЗАЦІЯ ВИТРАТ НА ЗАКУПІВЛЮ", headerFont));
+                PdfPTable expensesTable = new PdfPTable(4);
+                expensesTable.WidthPercentage = 100;
+
+                // Заголовки стовпців
+                expensesTable.AddCell(new Phrase("Дата", normalFont));
+                expensesTable.AddCell(new Phrase("Товар", normalFont));
+                expensesTable.AddCell(new Phrase("Кількість", normalFont));
+                expensesTable.AddCell(new Phrase("Сума", normalFont));
+
+                // Дані
+                foreach (DataRow row in reportData.ExpensesData.Rows)
+                {
+                    expensesTable.AddCell(new Phrase(Convert.ToDateTime(row["OrderDate"]).ToString("dd.MM.yyyy"), normalFont));
+                    expensesTable.AddCell(new Phrase(row["ProductName"].ToString(), normalFont));
+                    expensesTable.AddCell(new Phrase(row["QuantityOrdered"].ToString(), normalFont));
+                    expensesTable.AddCell(new Phrase(Convert.ToDecimal(row["TotalExpense"]).ToString("N2") + " грн", normalFont));
+                }
+
+                document.Add(expensesTable);
+
+                document.Close();
+                MessageBox.Show($"Звіт збережено у файл: {filePath}", "Експорт завершено");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка при створенні PDF: {ex.Message}", "Помилка");
+            }
+        }
+        private class FinancialReportData
+        {
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public DataTable SalesData { get; set; }
+            public DataTable ExpensesData { get; set; }
+            public decimal TotalRevenue { get; set; }
+            public decimal TotalExpenses { get; set; }
+            public decimal NetProfit { get; set; }
+            public int SalesCount { get; set; }
+        }
 
         private void RefreshBtn_Click(object sender, RoutedEventArgs e)
         {
