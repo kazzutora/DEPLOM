@@ -237,6 +237,17 @@ namespace WpfApp1
 
                     try
                     {
+                        // Отримуємо доступну кількість товару
+                        int availableQuantity = GetAvailableQuantity(productId);
+
+                        if (quantity > availableQuantity)
+                        {
+                            transaction.Rollback();
+                            MessageBox.Show($"На складі недостатньо товару. Максимально доступно: {availableQuantity}",
+                                          "Помилка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+
                         // Оновлюємо статус замовлення
                         SqlCommand updateOrderCmd = new SqlCommand(
                             "UPDATE Orders SET Status = 'Підтверджено' WHERE OrderID = @OrderID",
@@ -255,9 +266,10 @@ namespace WpfApp1
                         transaction.Commit();
                         MessageBox.Show($"Замовлення {orderId} підтверджено!\nТовар додано на склад.", "Успіх");
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         transaction.Rollback();
+                        MessageBox.Show($"Помилка підтвердження замовлення: {ex.Message}", "Помилка");
                         throw;
                     }
                 }
@@ -268,6 +280,25 @@ namespace WpfApp1
             catch (Exception ex)
             {
                 MessageBox.Show($"Помилка підтвердження замовлення: {ex.Message}", "Помилка");
+            }
+        }
+        private int GetAvailableQuantity(int productId)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    SqlCommand cmd = new SqlCommand(
+                        "SELECT Quantity FROM Products WHERE ProductID = @ProductID",
+                        connection);
+                    cmd.Parameters.AddWithValue("@ProductID", productId);
+                    return Convert.ToInt32(cmd.ExecuteScalar());
+                }
+            }
+            catch
+            {
+                return 0; // У разі помилки повертаємо 0
             }
         }
 
@@ -398,7 +429,6 @@ namespace WpfApp1
 
                     CreateOrder(productId, quantityOrdered, purchasePrice, selectedSupplierId, expectedDate);
 
-                    // Оновлюємо постачальника товару
                     if (selectedSupplierId.HasValue)
                     {
                         UpdateProductSupplier(productId, selectedSupplierId.Value);

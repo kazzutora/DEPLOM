@@ -43,11 +43,31 @@ namespace WpfApp1
 
         private void QuantityText_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
-            if (int.TryParse(QuantityText.Text, out int quantity) &&
-                quantity >= QuantitySlider.Minimum &&
-                quantity <= QuantitySlider.Maximum)
+            if (int.TryParse(QuantityText.Text, out int quantity))
             {
+                if (quantity > QuantitySlider.Maximum)
+                {
+                    MessageBox.Show($"Недостатня кількість на складі. Максимально доступно: {QuantitySlider.Maximum}",
+                                  "Попередження",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Warning);
+                }
+
+                quantity = Math.Clamp(quantity, (int)QuantitySlider.Minimum, (int)QuantitySlider.Maximum);
+
+                if (quantity.ToString() != QuantityText.Text)
+                {
+                    QuantityText.Text = quantity.ToString();
+                    QuantityText.CaretIndex = QuantityText.Text.Length;
+                }
+
                 QuantitySlider.Value = quantity;
+                UpdateTotalPrice();
+            }
+            else if (!string.IsNullOrEmpty(QuantityText.Text))
+            {
+                QuantityText.Text = QuantitySlider.Value.ToString();
+                QuantityText.CaretIndex = QuantityText.Text.Length;
             }
         }
 
