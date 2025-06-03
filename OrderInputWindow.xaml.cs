@@ -12,12 +12,16 @@ namespace WpfApp1
         public int? SelectedSupplierId { get; private set; }
         public DateTime? ExpectedDate { get; private set; }
         private DataTable suppliersData;
+        private int currentQuantity;
+        private int maxAvailableQuantity; // Додано поле для максимальної доступної кількості
 
         public OrderInputWindow(string productName, decimal purchasePrice,
                                 int currentQuantity, int minQuantity,
                                 int currentSupplierId, string currentSupplierName)
         {
             InitializeComponent();
+            this.currentQuantity = currentQuantity;
+            this.maxAvailableQuantity = currentQuantity; // Ініціалізація максимальної кількості
             LoadSuppliers();
             InitializeFields(productName, purchasePrice, currentQuantity, minQuantity, currentSupplierId, currentSupplierName);
         }
@@ -47,13 +51,12 @@ namespace WpfApp1
                                       int currentQuantity, int minQuantity,
                                       int currentSupplierId, string currentSupplierName)
         {
-            // Ініціалізація текстових полів
             ProductNameTextBlock.Text = productName;
             PurchasePriceTextBlock.Text = purchasePrice.ToString("N2") + " грн";
             CurrentQuantityTextBlock.Text = currentQuantity.ToString();
             MinQuantityTextBlock.Text = minQuantity.ToString();
 
-            // Розрахунок рекомендованої кількості
+            // Рекомендована кількість - мінімальна кількість мінус поточна, але не менше 0
             int recommended = Math.Max(0, minQuantity - currentQuantity);
             RecommendedQuantityTextBlock.Text = recommended.ToString();
             QuantityTextBox.Text = recommended.ToString();
@@ -63,7 +66,6 @@ namespace WpfApp1
             SupplierComboBox.DisplayMemberPath = "Name";
             SupplierComboBox.SelectedValuePath = "SupplierID";
 
-            // Встановлення поточного постачальника
             if (currentSupplierId > 0)
             {
                 foreach (DataRowView item in SupplierComboBox.Items)
@@ -80,14 +82,28 @@ namespace WpfApp1
                 SupplierComboBox.Text = currentSupplierName;
             }
 
-            // Встановлення дати за замовчуванням
             ExpectedDatePicker.SelectedDate = DateTime.Now.AddDays(3);
-
             CalculateTotal();
         }
 
         private void QuantityTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            // Перевірка введеної кількості
+            if (int.TryParse(QuantityTextBox.Text, out int quantity))
+            {
+                if (quantity > maxAvailableQuantity)
+                {
+                    MessageBox.Show($"На складі немає такої кількості товару. Максимально доступно: {maxAvailableQuantity}",
+                                  "Помилка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    QuantityTextBox.Text = maxAvailableQuantity.ToString();
+                }
+                else if (quantity <= 0)
+                {
+                    MessageBox.Show("Кількість має бути більше 0",
+                                  "Помилка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    QuantityTextBox.Text = "1";
+                }
+            }
             CalculateTotal();
         }
 
@@ -114,7 +130,13 @@ namespace WpfApp1
                 return;
             }
 
-            // Перевірка вибору постачальника
+            if (quantity > maxAvailableQuantity)
+            {
+                MessageBox.Show($"На складі немає такої кількості товару. Максимально доступно: {maxAvailableQuantity}",
+                              "Помилка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             if (SupplierComboBox.SelectedItem != null)
             {
                 DataRowView selectedRow = (DataRowView)SupplierComboBox.SelectedItem;
@@ -127,16 +149,15 @@ namespace WpfApp1
                 return;
             }
 
-            // Перевірка дати поставки
             if (!ExpectedDatePicker.SelectedDate.HasValue)
             {
                 MessageBox.Show("Будь ласка, вкажіть очікувану дату поставки.", "Попередження",
                                MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            ExpectedDate = ExpectedDatePicker.SelectedDate;
 
             QuantityOrdered = quantity;
+            ExpectedDate = ExpectedDatePicker.SelectedDate;
             DialogResult = true;
             Close();
         }
