@@ -70,6 +70,23 @@ namespace WpfApp1
 
             SuppliersWindow.ShowDialog();
         }
+        private void LightTheme_Click(object sender, RoutedEventArgs e)
+{
+    // Оновлення кольорів для світлої теми
+    Application.Current.Resources["BackgroundBrush"] = new SolidColorBrush((Color)Application.Current.Resources["BackgroundLight"]);
+    Application.Current.Resources["CardBrush"] = new SolidColorBrush((Color)Application.Current.Resources["CardLight"]);
+    Application.Current.Resources["TextBrush"] = new SolidColorBrush((Color)Application.Current.Resources["TextLight"]);
+    Application.Current.Resources["BorderBrush"] = new SolidColorBrush((Color)Application.Current.Resources["BorderLight"]);
+}
+
+private void DarkTheme_Click(object sender, RoutedEventArgs e)
+{
+    // Оновлення кольорів для темної теми
+    Application.Current.Resources["BackgroundBrush"] = new SolidColorBrush((Color)Application.Current.Resources["BackgroundDark"]);
+    Application.Current.Resources["CardBrush"] = new SolidColorBrush((Color)Application.Current.Resources["CardDark"]);
+    Application.Current.Resources["TextBrush"] = new SolidColorBrush((Color)Application.Current.Resources["TextDark"]);
+    Application.Current.Resources["BorderBrush"] = new SolidColorBrush((Color)Application.Current.Resources["BorderDark"]);
+}
 
         // Обробник для відкриття продажів
         private void OpenSales_Click(object sender, RoutedEventArgs e)
