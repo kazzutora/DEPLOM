@@ -4,34 +4,39 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <!-- Кольори для всього додатку -->
+            <!-- 1. Кольори -->
             <Color x:Key="PrimaryColor">#FF0078D7</Color>
             <Color x:Key="BorderColor">#FF808080</Color>
             <Color x:Key="TextColor">#FF000000</Color>
             <Color x:Key="BackgroundColor">#FFF0F0F0</Color>
             <Color x:Key="CardColor">#FFFFFFFF</Color>
 
-            <!-- ПЕНЗЛИКИ МАЮТЬ БУТИ ОГОЛОШЕНІ ПЕРЕД СТИЛЯМИ -->
+            <!-- 2. Базові пензлики БЕЗ залежностей -->
             <SolidColorBrush x:Key="SalesCardBrush" Color="#4CAF50" Opacity="0.1"/>
             <SolidColorBrush x:Key="CustomersCardBrush" Color="#00B894" Opacity="0.1"/>
             <SolidColorBrush x:Key="OrdersCardBrush" Color="#00CEC9" Opacity="0.1"/>
-            <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
-            <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
-            <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
-            <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
-            <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardColor}"/>
+            <SolidColorBrush x:Key="LightBackgroundBrush" Color="#FAFAFA"/>
+            <SolidColorBrush x:Key="AlternateRowBrush" Color="#F5F5F5"/>
 
+            <!-- 3. Основні пензлики з DynamicResource -->
+            <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource PrimaryColor}"/>
+            <SolidColorBrush x:Key="BorderBrush" Color="{DynamicResource BorderColor}"/>
+            <SolidColorBrush x:Key="TextBrush" Color="{DynamicResource TextColor}"/>
+            <SolidColorBrush x:Key="BackgroundBrush" Color="{DynamicResource BackgroundColor}"/>
+            <SolidColorBrush x:Key="CardBrush" Color="{DynamicResource CardColor}"/>
+
+            <!-- 4. Додаткові пензлики -->
             <SolidColorBrush x:Key="BorderBrushLowOpacity" 
-                             Color="{StaticResource BorderColor}" 
+                             Color="{DynamicResource BorderColor}" 
                              Opacity="0.3"/>
             <SolidColorBrush x:Key="PrimaryBrushLowOpacity" 
-                             Color="{StaticResource PrimaryColor}" 
+                             Color="{DynamicResource PrimaryColor}" 
                              Opacity="0.2"/>
             <SolidColorBrush x:Key="PrimaryBrushVeryLowOpacity" 
-                             Color="{StaticResource PrimaryColor}" 
+                             Color="{DynamicResource PrimaryColor}" 
                              Opacity="0.1"/>
 
-            <!-- Ефект тіні для карток -->
+            <!-- 5. Ефекти -->
             <DropShadowEffect x:Key="CardShadow" BlurRadius="8" ShadowDepth="2" Opacity="0.2" Color="Black"/>
 
             <!-- Базові стилі для вікон -->

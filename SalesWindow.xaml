@@ -3,13 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfApp1"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         mc:Ignorable="d"
         Title="Вікно продажів" Height="800" Width="1200"
         WindowStartupLocation="CenterScreen"
         Loaded="Window_Loaded">
-    <Grid>
+    <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -18,47 +17,82 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Заголовок і фільтри -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5" HorizontalAlignment="Stretch">
-            <Label Content="Доступні товари" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+        <!-- Заголовок і фільтри товарів -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <Label Content="Доступні товари" 
+                   FontSize="16" 
+                   FontWeight="Bold" 
+                   VerticalAlignment="Center"
+                   Padding="0,0,10,0"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5,0,0,0">
-                <ComboBox x:Name="CategoryFilterComboBox" Width="150" Margin="0,0,5,0" 
-                          SelectionChanged="CategoryFilterComboBox_SelectionChanged">
-                    <ComboBoxItem Tag="all">Всі категорії</ComboBoxItem>
-                    <!-- Категорії будуть додані програмно -->
+                <ComboBox x:Name="CategoryFilterComboBox" 
+          Width="180" 
+          Margin="0,0,10,0"
+          Padding="4"
+          VerticalContentAlignment="Center"
+          SelectionChanged="CategoryFilterComboBox_SelectionChanged">
+                    <ComboBoxItem x:Name="AllCategoriesItem" 
+                  Tag="all" 
+                  IsSelected="True">Всі категорії</ComboBoxItem>
                 </ComboBox>
+                <TextBox x:Name="SearchTextBox" 
+                         Width="250" 
+                         Margin="0,0,10,0"
+                         Padding="5"
+                         VerticalContentAlignment="Center"
+                         GotFocus="TextBox_GotFocus" 
+                         LostFocus="TextBox_LostFocus"
+                         TextChanged="SearchBox_TextChanged"
+                         ToolTip="Пошук товарів"/>
 
-                <TextBox x:Name="SearchTextBox" Width="200" Margin="0,0,5,0"
-                         GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus"
-                         TextChanged="SearchBox_TextChanged"/>
-                <Button Content="Пошук" Click="SearchButton_Click" Width="80"/>
-                <Button Content="Скинути фільтри" Click="ResetFilters_Click" Margin="10,0,0,0" Width="120"/>
+                <Button Content="Пошук" 
+                        Click="SearchButton_Click" 
+                        Width="80"
+                        Padding="5"
+                        Margin="0,0,10,0"/>
+
+                <Button Content="Скинути фільтри" 
+                        Click="ResetFilters_Click" 
+                        Width="120"
+                        Padding="5"/>
             </StackPanel>
         </StackPanel>
 
         <!-- Список товарів -->
-        <DataGrid x:Name="ProductDataGrid" Grid.Row="1" Margin="5"
-                  AutoGenerateColumns="False" IsReadOnly="True"
-                  SelectionMode="Single" SelectionUnit="FullRow">
+        <DataGrid x:Name="ProductDataGrid" 
+                  Grid.Row="1" 
+                  Margin="0,0,0,10"
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True"
+                  SelectionMode="Single" 
+                  SelectionUnit="FullRow"
+                  HeadersVisibility="Column"
+                  RowHeight="35"
+                  AlternatingRowBackground="#FFF5F5F5"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding ProductID}" Width="Auto"/>
+                <DataGridTextColumn Header="ID" Binding="{Binding ProductID}" Width="50"/>
                 <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="*"/>
                 <DataGridTextColumn Header="Категорія" Binding="{Binding CategoryName}" Width="*"/>
-                <DataGridTextColumn Header="Кількість" Binding="{Binding Quantity}" Width="Auto"/>
-                <DataGridTextColumn Header="Ціна" Binding="{Binding Price, StringFormat={}{0:N2} грн}" Width="Auto"/>
-                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="Auto">
+                <DataGridTextColumn Header="Кількість" Binding="{Binding Quantity}" Width="100"/>
+                <DataGridTextColumn Header="Ціна" Binding="{Binding Price, StringFormat={}{0:N2} грн}" Width="100"/>
+                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="150">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="FontWeight" Value="Medium"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Status}" Value="Немає в наявності">
-                                    <Setter Property="Foreground" Value="Red"/>
+                                    <Setter Property="Foreground" Value="#FFD32F2F"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Status}" Value="Закінчується">
-                                    <Setter Property="Foreground" Value="Orange"/>
+                                    <Setter Property="Foreground" Value="#FFFFA000"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Status}" Value="В наявності">
-                                    <Setter Property="Foreground" Value="Green"/>
+                                    <Setter Property="Foreground" Value="#FF388E3C"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -68,63 +102,130 @@
         </DataGrid>
 
         <!-- Фільтри історії продажів -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5" HorizontalAlignment="Stretch">
-            <Label Content="Історія продажів" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+            <Label Content="Історія продажів" 
+                   FontSize="16" 
+                   FontWeight="Bold" 
+                   VerticalAlignment="Center"
+                   Padding="0,0,10,0"/>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5,0,0,0">
-                <DatePicker x:Name="StartDatePicker" Width="120" Margin="0,0,5,0" SelectedDateFormat="Short"/>
-                <Label Content="по" VerticalAlignment="Center"/>
-                <DatePicker x:Name="EndDatePicker" Width="120" Margin="5,0,5,0" SelectedDateFormat="Short"/>
-                <Button Content="Застосувати" Click="ApplyDateFilter_Click" Width="100"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <DatePicker x:Name="StartDatePicker" 
+                            Width="140" 
+                            Margin="0,0,10,0"
+                            Padding="4"
+                            VerticalContentAlignment="Center"
+                            SelectedDateFormat="Short"
+                            ToolTip="Початкова дата"/>
+
+                <Label Content="по" 
+                       VerticalAlignment="Center"
+                       Padding="0,0,10,0"/>
+
+                <DatePicker x:Name="EndDatePicker" 
+                            Width="140" 
+                            Margin="0,0,10,0"
+                            Padding="4"
+                            VerticalContentAlignment="Center"
+                            SelectedDateFormat="Short"
+                            ToolTip="Кінцева дата"/>
+
+                <Button Content="Застосувати" 
+                        Click="ApplyDateFilter_Click" 
+                        Width="110"
+                        Padding="5"
+                        Margin="0,0,10,0"/>
             </StackPanel>
         </StackPanel>
 
         <!-- Історія продажів -->
-        <TabControl Grid.Row="3" Margin="5">
+        <TabControl Grid.Row="3" Margin="0,0,0,10">
             <TabItem Header="Таблиця продажів">
                 <DataGrid x:Name="SalesHistoryDataGrid" 
-                          AutoGenerateColumns="False" IsReadOnly="True">
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          RowHeight="35"
+                          AlternatingRowBackground="#FFF5F5F5"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Дата" Binding="{Binding SaleDate}" Width="*"/>
+                        <DataGridTextColumn Header="Дата" 
+                                           Binding="{Binding SaleDate, StringFormat={}{0:dd.MM.yyyy}}" 
+                                           Width="120"/>
                         <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="*"/>
                         <DataGridTextColumn Header="Категорія" Binding="{Binding CategoryName}" Width="*"/>
-                        <DataGridTextColumn Header="Кількість" Binding="{Binding QuantitySold}" Width="Auto"/>
-                        <DataGridTextColumn Header="Сума" Binding="{Binding TotalAmount, StringFormat={}{0:N2} грн}" Width="Auto"/>
+                        <DataGridTextColumn Header="Кількість" Binding="{Binding QuantitySold}" Width="100"/>
+                        <DataGridTextColumn Header="Сума" 
+                                           Binding="{Binding TotalAmount, StringFormat={}{0:N2} грн}" 
+                                           Width="120"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
 
-            <!-- Виправлений графік продажів -->
             <TabItem Header="Графік продажів">
-                <lvc:CartesianChart LegendLocation="Right" Series="{Binding SalesChartSeries}">
-                    <lvc:CartesianChart.AxisX>
-                        <lvc:Axis Title="Дата" Labels="{Binding SalesDates}"/>
-                    </lvc:CartesianChart.AxisX>
-                    <lvc:CartesianChart.AxisY>
-                        <lvc:Axis Title="Сума (грн)"/>
-                    </lvc:CartesianChart.AxisY>
-                </lvc:CartesianChart>
+                <Grid>
+                    <lvc:CartesianChart LegendLocation="Right" Series="{Binding SalesChartSeries}">
+                        <lvc:CartesianChart.AxisX>
+                            <lvc:Axis Title="Дата" 
+                                     Labels="{Binding SalesDates}"
+                                     LabelsRotation="-45"/>
+                        </lvc:CartesianChart.AxisX>
+                        <lvc:CartesianChart.AxisY>
+                            <lvc:Axis Title="Сума (грн)"/>
+                        </lvc:CartesianChart.AxisY>
+                    </lvc:CartesianChart>
+                </Grid>
             </TabItem>
 
-            <!-- Виправлений графік топ товарів -->
             <TabItem Header="Топ товари">
-                <lvc:PieChart LegendLocation="Bottom" InnerRadius="50" 
-                              Series="{Binding TopProductsSeries}">
-                    <lvc:PieChart.DataTooltip>
-                        <lvc:DefaultTooltip SelectionMode="OnlySender"/>
-                    </lvc:PieChart.DataTooltip>
-                </lvc:PieChart>
+                <Grid>
+                    <lvc:PieChart LegendLocation="Bottom" 
+                                 InnerRadius="50" 
+                                 Series="{Binding TopProductsSeries}"
+                                 HoverPushOut="5">
+                        <lvc:PieChart.DataTooltip>
+                            <lvc:DefaultTooltip SelectionMode="OnlySender"/>
+                        </lvc:PieChart.DataTooltip>
+                    </lvc:PieChart>
+                </Grid>
             </TabItem>
         </TabControl>
 
         <!-- Кнопки управління -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
-            <Button x:Name="BtnSell" Content="Продати" Width="100" Margin="5" Click="BtnSell_Click"/>
-            <Button x:Name="BtnGenerateReport" Content="Звіт PDF" Width="100" Margin="5" Click="BtnGenerateReport_Click"/>
-            <Button x:Name="BtnGenerateAnalyticalReport" Content="Аналітичний звіт" 
-                    Click="BtnGenerateAnalyticalReport_Click" Margin="5" Padding="10,5"
-                    Width="150"/>
-            <Button Content="Закрити" Width="100" Margin="5" Click="Close_Click"/>
+        <StackPanel Grid.Row="4" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,10,0,0">
+            <Button x:Name="BtnSell" 
+                    Content="Продати" 
+                    Width="100" 
+                    Margin="0,0,10,0"
+                    Padding="8,4"
+                    FontWeight="SemiBold"
+                    Click="BtnSell_Click"/>
+
+            <Button x:Name="BtnGenerateReport" 
+                    Content="Звіт PDF" 
+                    Width="100" 
+                    Margin="0,0,10,0"
+                    Padding="8,4"
+                    FontWeight="SemiBold"
+                    Click="BtnGenerateReport_Click"/>
+
+            <Button x:Name="BtnGenerateAnalyticalReport" 
+                    Content="Аналітичний звіт" 
+                    Width="150"
+                    Padding="8,4"
+                    FontWeight="SemiBold"
+                    Margin="0,0,10,0"
+                    Click="BtnGenerateAnalyticalReport_Click"/>
+
+            <Button Content="Закрити" 
+                    Width="100" 
+                    Padding="8,4"
+                    FontWeight="SemiBold"
+                    Click="Close_Click"/>
         </StackPanel>
     </Grid>
 </Window>

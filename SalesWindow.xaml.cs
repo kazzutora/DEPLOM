@@ -114,6 +114,7 @@ namespace WpfApp1
                     adapter.Fill(productsData);
 
                     ProductDataGrid.ItemsSource = productsData.DefaultView;
+                    ApplyProductFilter();
                 }
             }
             catch (Exception ex)
@@ -968,17 +969,16 @@ namespace WpfApp1
         {
             if (ProductDataGrid.ItemsSource is DataView dataView)
             {
-                string searchText = SearchTextBox.Text.Trim();
+                string searchText = SearchTextBox.Text?.Trim() ?? "";
                 if (searchText.Equals("Введіть пошук...", StringComparison.OrdinalIgnoreCase))
                     searchText = "";
 
                 string categoryFilter = "";
-                string selectedCategory = CategoryFilterComboBox.SelectedItem?.ToString();
+                string selectedCategory = CategoryFilterComboBox.SelectedItem as string;
 
                 if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != "Всі категорії")
                 {
-                    // Фільтруємо по імені категорії
-                    categoryFilter = $"[CategoryName] = '{selectedCategory}'";
+                    categoryFilter = $"[CategoryName] = '{EscapeFilterValue(selectedCategory)}'";
                 }
 
                 if (string.IsNullOrWhiteSpace(searchText))
@@ -987,12 +987,20 @@ namespace WpfApp1
                 }
                 else
                 {
-                    string searchFilter = $"(Name LIKE '%{searchText}%' OR CategoryName LIKE '%{searchText}%')";
+                    string escapedSearch = EscapeFilterValue(searchText);
+                    string searchFilter = $"(Name LIKE '%{escapedSearch}%' OR CategoryName LIKE '%{escapedSearch}%')";
+
                     dataView.RowFilter = string.IsNullOrEmpty(categoryFilter)
                         ? searchFilter
                         : $"{categoryFilter} AND {searchFilter}";
                 }
             }
+        }
+
+        // Допоміжний метод для екранування
+        private string EscapeFilterValue(string value)
+        {
+            return value?.Replace("'", "''") ?? "";
         }
 
         private void ApplyDateFilter_Click(object sender, RoutedEventArgs e)
@@ -1018,16 +1026,9 @@ namespace WpfApp1
 
         private void CategoryFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (CategoryFilterComboBox.SelectedItem == null) return;
-
-            try
+            if (IsLoaded) // Перевірка, що вікно вже завантажене
             {
                 ApplyProductFilter();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Помилка при фільтрації: {ex.Message}", "Помилка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

@@ -49,18 +49,30 @@ namespace WpfApp1
         }
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
-            // Create and configure the OpenFileDialog
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp;*.gif"; // Set filter for image types
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Image files (*.png;*.jpeg;*.jpg;*.bmp)|*.png;*.jpeg;*.jpg;*.bmp",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+            };
 
-            // Show the file dialog and check if the user selects a file
             if (openFileDialog.ShowDialog() == true)
             {
-                // Store the path of the selected image
-                productImagePath = openFileDialog.FileName;
+                try
+                {
+                    // Створюємо BitmapImage для коректного завантаження
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(openFileDialog.FileName);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze(); // Для безпечного використання в UI
 
-                // Display the selected image in the Image control
-                ProductImage.Source = new BitmapImage(new Uri(productImagePath));
+                    ProductImage.Source = bitmap;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Помилка завантаження зображення: {ex.Message}");
+                }
             }
         }
 
