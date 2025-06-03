@@ -1,0 +1,37 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Кольори -->
+    <Color x:Key="BackgroundLight">#FFF5F5F5</Color>
+    <Color x:Key="CardLight">#FFFFFFFF</Color>
+    <Color x:Key="TextLight">#FF333333</Color>
+    <Color x:Key="BorderLight">#FFCCCCCC</Color>
+    <Color x:Key="PrimaryLight">#FF0078D7</Color>
+    <Color x:Key="PrimaryBrushLowOpacityLight">#330078D7</Color>
+
+    <!-- Пензлі -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundLight}"/>
+    <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardLight}"/>
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextLight}"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderLight}"/>
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryLight}"/>
+    <SolidColorBrush x:Key="PrimaryBrushLowOpacity" Color="{StaticResource PrimaryBrushLowOpacityLight}"/>
+
+    <!-- Тінь -->
+    <DropShadowEffect x:Key="CardShadow" BlurRadius="10" ShadowDepth="1" Color="#40000000"/>
+
+    <!-- Стилі кнопок -->
+    <Style x:Key="IconButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="FontSize" Value="16"/>
+    </Style>
+
+    <Style x:Key="FlatButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="10 5"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+</ResourceDictionary>

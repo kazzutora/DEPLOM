@@ -131,27 +131,33 @@
 
                             <!-- Статистика -->
                             <WrapPanel Margin="0 0 0 24">
+                                <!-- Продажі за день -->
                                 <Border Background="{DynamicResource PrimaryBrushLowOpacity}" 
-                                        CornerRadius="8" Padding="16" MinWidth="200" Margin="0 0 16 16">
+            CornerRadius="8" Padding="16" MinWidth="200" Margin="0 0 16 16">
                                     <StackPanel>
                                         <TextBlock Text="Продажі за день" Opacity="0.8"/>
-                                        <TextBlock Text="₴24,580.00" FontSize="20" FontWeight="Bold" Margin="0 4 0 0"/>
+                                        <TextBlock Text="{Binding DailySales, StringFormat='₴{0:N2}'}" 
+                       FontSize="20" FontWeight="Bold" Margin="0 4 0 0"/>
                                     </StackPanel>
                                 </Border>
 
+                                <!-- Нові клієнти -->
                                 <Border Background="#FF00B894" Opacity="0.1" 
-                                        CornerRadius="8" Padding="16" MinWidth="200" Margin="0 0 16 16">
+            CornerRadius="8" Padding="16" MinWidth="200" Margin="0 0 16 16">
                                     <StackPanel>
                                         <TextBlock Text="Нові клієнти" Opacity="0.8"/>
-                                        <TextBlock Text="12" FontSize="20" FontWeight="Bold" Margin="0 4 0 0"/>
+                                        <TextBlock Text="{Binding NewCustomers}" 
+                       FontSize="20" FontWeight="Bold" Margin="0 4 0 0"/>
                                     </StackPanel>
                                 </Border>
 
+                                <!-- Активні замовлення -->
                                 <Border Background="#FF00CEC9" Opacity="0.1" 
-                                        CornerRadius="8" Padding="16" MinWidth="200" Margin="0 0 16 16">
+            CornerRadius="8" Padding="16" MinWidth="200" Margin="0 0 16 16">
                                     <StackPanel>
                                         <TextBlock Text="Активні замовлення" Opacity="0.8"/>
-                                        <TextBlock Text="8" FontSize="20" FontWeight="Bold" Margin="0 4 0 0"/>
+                                        <TextBlock Text="{Binding ActiveOrders}" 
+                       FontSize="20" FontWeight="Bold" Margin="0 4 0 0"/>
                                     </StackPanel>
                                 </Border>
                             </WrapPanel>
@@ -159,10 +165,17 @@
                             <!-- Швидкі дії -->
                             <TextBlock Text="Швидкі дії" FontSize="18" FontWeight="Bold" Margin="0 0 0 16"/>
                             <WrapPanel>
-                                <Button Content="Додати продукт" Padding="24 12" Margin="0 0 16 16" Style="{StaticResource {x:Type Button}}"/>
-                                <Button Content="Створити продаж" Padding="24 12" Margin="0 0 16 16"
-                                        Background="{DynamicResource PrimaryBrush}" Foreground="White" Style="{StaticResource {x:Type Button}}"/>
-                                <Button Content="Перегляд звітів" Padding="24 12" Margin="0 0 16 16" Style="{StaticResource {x:Type Button}}"/>
+                                <Button Content="Додати продукт" 
+            Click="AddProductQuick_Click"
+            Margin="10" Padding="15 5"/>
+
+                                <Button Content="Створити продаж" 
+            Click="CreateSaleQuick_Click"
+            Margin="10" Padding="15 5"/>
+
+                                <Button Content="Перегляд звітів" 
+            Click="ViewReports_Click"
+            Margin="10" Padding="15 5"/>
                             </WrapPanel>
                         </StackPanel>
                     </ScrollViewer>

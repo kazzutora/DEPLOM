@@ -37,8 +37,8 @@ namespace WpfApp1
             StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
             EndDatePicker.SelectedDate = DateTime.Today;
 
-            LoadData();
             InitializeCharts();
+            LoadData();
             LoadCategories();
         }
 
@@ -92,6 +92,7 @@ namespace WpfApp1
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private void LoadProducts()
         {
             try
@@ -167,23 +168,29 @@ namespace WpfApp1
             SalesChartSeries = new SeriesCollection();
             TopProductsSeries = new SeriesCollection();
             SalesDates = new List<string>();
+
+            OnPropertyChanged(nameof(SalesChartSeries));
+            OnPropertyChanged(nameof(TopProductsSeries));
+            OnPropertyChanged(nameof(SalesDates));
         }
 
         private void UpdateCharts()
         {
-            // Додаємо перевірку на null
-            if (salesData == null || salesData.Rows.Count == 0)
-            {
-                // Очищаємо графіки, якщо немає даних
-                SalesChartSeries?.Clear();
-                TopProductsSeries?.Clear();
-                OnPropertyChanged(nameof(SalesChartSeries));
-                OnPropertyChanged(nameof(TopProductsSeries));
-                return;
-            }
-
             try
             {
+                // Перевірка на наявність даних
+                if (salesData == null || salesData.Rows.Count == 0)
+                {
+                    SalesChartSeries = new SeriesCollection();
+                    TopProductsSeries = new SeriesCollection();
+                    SalesDates = new List<string>();
+
+                    OnPropertyChanged(nameof(SalesChartSeries));
+                    OnPropertyChanged(nameof(TopProductsSeries));
+                    OnPropertyChanged(nameof(SalesDates));
+                    return;
+                }
+
                 var filteredData = salesData.AsEnumerable()
                     .Where(r => r["SaleDate"] != DBNull.Value &&
                                r["TotalAmount"] != DBNull.Value &&
@@ -255,6 +262,15 @@ namespace WpfApp1
             {
                 MessageBox.Show($"Помилка оновлення графіків: {ex.Message}", "Помилка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+
+                // Створюємо пусті колекції при помилці
+                SalesChartSeries = new SeriesCollection();
+                TopProductsSeries = new SeriesCollection();
+                SalesDates = new List<string>();
+
+                OnPropertyChanged(nameof(SalesChartSeries));
+                OnPropertyChanged(nameof(TopProductsSeries));
+                OnPropertyChanged(nameof(SalesDates));
             }
         }
 
@@ -316,6 +332,13 @@ namespace WpfApp1
                                     "Успіх", MessageBoxButton.OK, MessageBoxImage.Information);
 
                                 LoadData();
+                                UpdateMainWindowDailySales();
+
+                                // Додано: Оновлення головного вікна
+                                if (Application.Current.MainWindow is MainWindow mainWindow)
+                                {
+                                    mainWindow.RefreshDashboard();
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -329,6 +352,19 @@ namespace WpfApp1
             catch (Exception ex)
             {
                 MessageBox.Show($"Помилка: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void UpdateMainWindowDailySales()
+        {
+            // Оновлення продажів у головному вікні
+            var mainWindow = Application.Current.Windows
+                .OfType<MainWindow>()
+                .FirstOrDefault();
+
+            if (mainWindow != null)
+            {
+                mainWindow.UpdateDailySales();
             }
         }
 
@@ -533,6 +569,7 @@ namespace WpfApp1
 
             table.AddCell(cell);
         }
+
         private void BtnGenerateAnalyticalReport_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -821,6 +858,7 @@ namespace WpfApp1
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         public class PdfPageEventHandler : IPdfPageEvent
         {
             private readonly string _reportTitle;
@@ -957,7 +995,6 @@ namespace WpfApp1
             }
         }
 
-
         private void ApplyDateFilter_Click(object sender, RoutedEventArgs e)
         {
             if (StartDatePicker.SelectedDate > EndDatePicker.SelectedDate)
@@ -1000,33 +1037,12 @@ namespace WpfApp1
         }
     }
 
-    public class StatusToColorConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value == null) return Brushes.Black;
-
-            string status = value.ToString().ToLower();
-            return status switch
-            {
-                "в наявності" => Brushes.Green,
-                "закінчується" => Brushes.Orange,
-                "немає в наявності" => Brushes.Red,
-                _ => Brushes.Black
-            };
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class PdfPageEventHandler : IPdfPageEvent
+    // Перейменований клас для уникнення конфлікту імен
+    public class BasePdfPageEventHandler : IPdfPageEvent
     {
         private readonly string _reportTitle;
 
-        public PdfPageEventHandler(string reportTitle)
+        public BasePdfPageEventHandler(string reportTitle)
         {
             _reportTitle = reportTitle;
         }
@@ -1064,8 +1080,6 @@ namespace WpfApp1
             footer.WriteSelectedRows(0, -1, document.LeftMargin, document.BottomMargin, writer.DirectContent);
         }
 
-       
-
         public void OnParagraph(PdfWriter writer, Document document, float paragraphPosition) { }
         public void OnParagraphEnd(PdfWriter writer, Document document, float paragraphPosition) { }
         public void OnChapter(PdfWriter writer, Document document, float paragraphPosition, Paragraph title) { }
@@ -1073,5 +1087,18 @@ namespace WpfApp1
         public void OnSection(PdfWriter writer, Document document, float paragraphPosition, int depth, Paragraph title) { }
         public void OnSectionEnd(PdfWriter writer, Document document, float paragraphPosition) { }
         public void OnGenericTag(PdfWriter writer, Document document, Rectangle rect, string text) { }
+    }
+
+    public class Sale
+    {
+        public int SaleID { get; set; }
+        public DateTime SaleDate { get; set; }
+        public int ProductID { get; set; }
+        public int QuantitySold { get; set; }
+        public int TotalAmount { get; set; }
+        public int TotalPrice { get; set; }
+
+        // Навігаційна властивість до продукту
+        public virtual Product Product { get; set; }
     }
 }

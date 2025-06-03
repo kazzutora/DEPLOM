@@ -12,6 +12,9 @@
             <Color x:Key="CardColor">#FFFFFFFF</Color>
 
             <!-- ПЕНЗЛИКИ МАЮТЬ БУТИ ОГОЛОШЕНІ ПЕРЕД СТИЛЯМИ -->
+            <SolidColorBrush x:Key="SalesCardBrush" Color="#4CAF50" Opacity="0.1"/>
+            <SolidColorBrush x:Key="CustomersCardBrush" Color="#00B894" Opacity="0.1"/>
+            <SolidColorBrush x:Key="OrdersCardBrush" Color="#00CEC9" Opacity="0.1"/>
             <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
             <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
             <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>

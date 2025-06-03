@@ -94,8 +94,9 @@
                 </DataGrid>
             </TabItem>
 
+            <!-- Виправлений графік продажів -->
             <TabItem Header="Графік продажів">
-                <lvc:CartesianChart x:Name="SalesChart" Series="{Binding SalesChartSeries}" LegendLocation="Right">
+                <lvc:CartesianChart LegendLocation="Right" Series="{Binding SalesChartSeries}">
                     <lvc:CartesianChart.AxisX>
                         <lvc:Axis Title="Дата" Labels="{Binding SalesDates}"/>
                     </lvc:CartesianChart.AxisX>
@@ -105,9 +106,10 @@
                 </lvc:CartesianChart>
             </TabItem>
 
+            <!-- Виправлений графік топ товарів -->
             <TabItem Header="Топ товари">
-                <lvc:PieChart x:Name="TopProductsChart" Series="{Binding TopProductsSeries}" 
-                              LegendLocation="Bottom" InnerRadius="50">
+                <lvc:PieChart LegendLocation="Bottom" InnerRadius="50" 
+                              Series="{Binding TopProductsSeries}">
                     <lvc:PieChart.DataTooltip>
                         <lvc:DefaultTooltip SelectionMode="OnlySender"/>
                     </lvc:PieChart.DataTooltip>
@@ -120,8 +122,8 @@
             <Button x:Name="BtnSell" Content="Продати" Width="100" Margin="5" Click="BtnSell_Click"/>
             <Button x:Name="BtnGenerateReport" Content="Звіт PDF" Width="100" Margin="5" Click="BtnGenerateReport_Click"/>
             <Button x:Name="BtnGenerateAnalyticalReport" Content="Аналітичний звіт" 
-        Click="BtnGenerateAnalyticalReport_Click" Margin="5" Padding="10,5"
-        Style="{StaticResource ModernButtonStyle}"/>
+                    Click="BtnGenerateAnalyticalReport_Click" Margin="5" Padding="10,5"
+                    Width="150"/>
             <Button Content="Закрити" Width="100" Margin="5" Click="Close_Click"/>
         </StackPanel>
     </Grid>

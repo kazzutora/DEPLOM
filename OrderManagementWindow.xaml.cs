@@ -3,7 +3,7 @@ using System;
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
-using static WpfApp1.PdfPageEventHandler;
+using static WpfApp1.BasePdfPageEventHandler;
 using System.Windows.Media;
 using iTextSharp.text.pdf;
 using iTextSharp.text;

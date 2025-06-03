@@ -5,6 +5,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
+using System.ComponentModel;
 
 namespace WpfApp1
 {
@@ -204,20 +205,86 @@ namespace WpfApp1
 
     }
 
-    public class Product
+    public class Product : INotifyPropertyChanged
     {
-        public int ProductID { get; set; }
-        public string Name { get; set; }
-        public string Category { get; set; }
-        public int Quantity { get; set; }
-        public decimal Price { get; set; }
-        public string Description { get; set; } 
-        public decimal PurchasePrice { get; set; }
-        public string ImagePath { get; set; }
+        private int _productID;
+        private string _name;
+        private string _category;
+        private int _quantity;
+        private decimal _price;
+        private string _description;
+        private decimal _purchasePrice;
+        private string _imagePath;
 
-        public BitmapImage ProductImage =>
-            !string.IsNullOrWhiteSpace(ImagePath) && File.Exists(ImagePath)
-                ? new BitmapImage(new Uri(ImagePath))
-                : null;
+        public int ProductID
+        {
+            get => _productID;
+            set { _productID = value; OnPropertyChanged(nameof(ProductID)); }
+        }
+
+        public string Name
+        {
+            get => _name;
+            set { _name = value; OnPropertyChanged(nameof(Name)); }
+        }
+
+        public string Category
+        {
+            get => _category;
+            set { _category = value; OnPropertyChanged(nameof(Category)); }
+        }
+
+        public int Quantity
+        {
+            get => _quantity;
+            set { _quantity = value; OnPropertyChanged(nameof(Quantity)); }
+        }
+
+        public decimal Price
+        {
+            get => _price;
+            set { _price = value; OnPropertyChanged(nameof(Price)); }
+        }
+
+        public string Description
+        {
+            get => _description;
+            set { _description = value; OnPropertyChanged(nameof(Description)); }
+        }
+
+        public decimal PurchasePrice
+        {
+            get => _purchasePrice;
+            set { _purchasePrice = value; OnPropertyChanged(nameof(PurchasePrice)); }
+        }
+
+        public string ImagePath
+        {
+            get => _imagePath;
+            set
+            {
+                _imagePath = value;
+                OnPropertyChanged(nameof(ImagePath));
+                OnPropertyChanged(nameof(ProductImage)); // Важливо!
+            }
+        }
+
+        public BitmapImage ProductImage
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(ImagePath) && File.Exists(ImagePath))
+                {
+                    return new BitmapImage(new Uri(ImagePath));
+                }
+                return null;
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }
