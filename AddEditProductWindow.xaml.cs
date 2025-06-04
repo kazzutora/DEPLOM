@@ -13,7 +13,7 @@ namespace WpfApp1
     {
         private string connectionString = "Server=localhost;Database=StoreInventoryDB;Integrated Security=True;Encrypt=False;";
         private DataRowView editingProduct;
-        private string productImagePath;
+        private byte[] productImageBytes;
 
         public AddEditProductWindow(DataRowView product = null)
         {
@@ -23,7 +23,6 @@ namespace WpfApp1
 
             if (editingProduct != null)
             {
-                // If editing an existing product, populate fields
                 NameTextBox.Text = editingProduct["Name"].ToString();
                 CategoryComboBox.SelectedItem = editingProduct["Category"].ToString();
                 QuantityTextBox.Text = editingProduct["Quantity"].ToString();
@@ -31,25 +30,43 @@ namespace WpfApp1
                 SupplierComboBox.SelectedItem = editingProduct["Supplier"].ToString();
                 PurchasePriceTextBox.Text = editingProduct["PurchasePrice"].ToString();
 
-                // If there is an image associated with the product, display it
                 if (editingProduct["Image"] != DBNull.Value)
                 {
-                    byte[] imageData = (byte[])editingProduct["Image"];
-                    BitmapImage bitmap = new BitmapImage();
-                    using (MemoryStream stream = new MemoryStream(imageData))
-                    {
-                        bitmap.BeginInit();
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.StreamSource = stream;
-                        bitmap.EndInit();
-                    }
-                    ProductImage.Source = bitmap;
+                    productImageBytes = (byte[])editingProduct["Image"];
+                    ProductImage.Source = LoadImage(productImageBytes);
                 }
             }
         }
+
+        private BitmapImage LoadImage(byte[] imageData)
+        {
+            if (imageData == null || imageData.Length == 0) return null;
+
+            try
+            {
+                var image = new BitmapImage();
+                using (var mem = new MemoryStream(imageData))
+                {
+                    mem.Position = 0;
+                    image.BeginInit();
+                    image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+                    image.CacheOption = BitmapCacheOption.OnLoad;
+                    image.UriSource = null;
+                    image.StreamSource = mem;
+                    image.EndInit();
+                }
+                image.Freeze();
+                return image;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            var openFileDialog = new OpenFileDialog
             {
                 Filter = "Image files (*.png;*.jpeg;*.jpg;*.bmp)|*.png;*.jpeg;*.jpg;*.bmp",
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
@@ -59,15 +76,8 @@ namespace WpfApp1
             {
                 try
                 {
-                    // Створюємо BitmapImage для коректного завантаження
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.UriSource = new Uri(openFileDialog.FileName);
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.EndInit();
-                    bitmap.Freeze(); // Для безпечного використання в UI
-
-                    ProductImage.Source = bitmap;
+                    productImageBytes = File.ReadAllBytes(openFileDialog.FileName);
+                    ProductImage.Source = LoadImage(productImageBytes);
                 }
                 catch (Exception ex)
                 {
@@ -76,8 +86,6 @@ namespace WpfApp1
             }
         }
 
-
-        // Loading categories and suppliers into ComboBox
         private void LoadCategoriesAndSuppliers()
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -86,7 +94,6 @@ namespace WpfApp1
                 {
                     connection.Open();
 
-                    // Load Categories
                     string categoryQuery = "SELECT CategoryName FROM Categories";
                     SqlCommand categoryCommand = new SqlCommand(categoryQuery, connection);
                     SqlDataReader categoryReader = categoryCommand.ExecuteReader();
@@ -96,7 +103,6 @@ namespace WpfApp1
                     }
                     categoryReader.Close();
 
-                    // Load Suppliers
                     string supplierQuery = "SELECT Name FROM Suppliers";
                     SqlCommand supplierCommand = new SqlCommand(supplierQuery, connection);
                     SqlDataReader supplierReader = supplierCommand.ExecuteReader();
@@ -113,7 +119,6 @@ namespace WpfApp1
             }
         }
 
-        // Save button handler
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(NameTextBox.Text) ||
@@ -122,7 +127,25 @@ namespace WpfApp1
                 string.IsNullOrWhiteSpace(PriceTextBox.Text) ||
                 SupplierComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Please fill in all fields.");
+                MessageBox.Show("Будь ласка, заповніть всі обов'язкові поля.");
+                return;
+            }
+
+            if (!int.TryParse(QuantityTextBox.Text, out int quantity))
+            {
+                MessageBox.Show("Будь ласка, введіть коректну кількість.");
+                return;
+            }
+
+            if (!decimal.TryParse(PriceTextBox.Text, out decimal price))
+            {
+                MessageBox.Show("Будь ласка, введіть коректну ціну.");
+                return;
+            }
+
+            if (!decimal.TryParse(PurchasePriceTextBox.Text, out decimal purchasePrice))
+            {
+                MessageBox.Show("Будь ласка, введіть коректну ціну закупівлі.");
                 return;
             }
 
@@ -131,47 +154,33 @@ namespace WpfApp1
                 try
                 {
                     connection.Open();
-
-                    string query;
-                    if (editingProduct == null)
-                    {
-                        // Adding new product
-                        query = @"
-                   INSERT INTO Products (Name, CategoryID, Quantity, Price, SupplierID, ImagePath, PurchasePrice)
-VALUES (@Name, 
-    (SELECT TOP 1 CategoryID FROM Categories WHERE CategoryName = @Category), 
-    @Quantity, 
-    @Price, 
-    (SELECT SupplierID FROM Suppliers WHERE Name = @Supplier), 
-    @ImagePath, 
-    @PurchasePrice)";
-                    }
-                    else
-                    {
-                        // Updating existing product
-                        query = @"
-                  UPDATE Products
-SET 
-    Name = @Name,
-    CategoryID = (SELECT CategoryID FROM Categories WHERE CategoryName = @Category),
-    Quantity = @Quantity,
-    Price = @Price,
-    SupplierID = (SELECT SupplierID FROM Suppliers WHERE Name = @Supplier),
-    ImagePath = @ImagePath,
-    PurchasePrice = @PurchasePrice
-WHERE ProductID = @ProductID";
-                    }
+                    string query = editingProduct == null ?
+                        @"INSERT INTO Products (Name, CategoryID, Quantity, Price, SupplierID, Image, PurchasePrice)
+                          VALUES (@Name, 
+                              (SELECT CategoryID FROM Categories WHERE CategoryName = @Category), 
+                              @Quantity, 
+                              @Price, 
+                              (SELECT SupplierID FROM Suppliers WHERE Name = @Supplier), 
+                              @Image, 
+                              @PurchasePrice)" :
+                        @"UPDATE Products SET
+                          Name = @Name,
+                          CategoryID = (SELECT CategoryID FROM Categories WHERE CategoryName = @Category),
+                          Quantity = @Quantity,
+                          Price = @Price,
+                          SupplierID = (SELECT SupplierID FROM Suppliers WHERE Name = @Supplier),
+                          Image = @Image,
+                          PurchasePrice = @PurchasePrice
+                      WHERE ProductID = @ProductID";
 
                     SqlCommand command = new SqlCommand(query, connection);
                     command.Parameters.AddWithValue("@Name", NameTextBox.Text);
                     command.Parameters.AddWithValue("@Category", CategoryComboBox.SelectedItem.ToString());
-                    command.Parameters.AddWithValue("@Quantity", int.Parse(QuantityTextBox.Text));
-                    command.Parameters.AddWithValue("@Price", decimal.Parse(PriceTextBox.Text));
+                    command.Parameters.AddWithValue("@Quantity", quantity);
+                    command.Parameters.AddWithValue("@Price", price);
                     command.Parameters.AddWithValue("@Supplier", SupplierComboBox.SelectedItem.ToString());
-                    command.Parameters.AddWithValue("@PurchasePrice", decimal.Parse(PurchasePriceTextBox.Text));
-
-                    // Store the image path instead of the image bytes
-                    command.Parameters.AddWithValue("@ImagePath", string.IsNullOrWhiteSpace(productImagePath) ? (object)DBNull.Value : productImagePath);
+                    command.Parameters.AddWithValue("@PurchasePrice", purchasePrice);
+                    command.Parameters.AddWithValue("@Image", productImageBytes ?? (object)DBNull.Value);
 
                     if (editingProduct != null)
                     {
@@ -183,30 +192,14 @@ WHERE ProductID = @ProductID";
                 }
                 catch (SqlException ex)
                 {
-                    MessageBox.Show("Save error: " + ex.Message);
+                    MessageBox.Show($"Помилка збереження: {ex.Message}");
                 }
             }
         }
 
-
-        // Cancel button handler
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
-        }
-
-        // Add Image Button Click handler
-        private void AddPhotoButton_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp;*.gif";
-            if (openFileDialog.ShowDialog() == true)
-            {
-                productImagePath = openFileDialog.FileName;
-
-                // Display the selected image in the Image control
-                ProductImage.Source = new BitmapImage(new Uri(productImagePath));
-            }
         }
     }
 }

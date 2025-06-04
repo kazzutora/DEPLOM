@@ -1,11 +1,13 @@
 ﻿using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Windows;
-using System.Windows.Media.Imaging;
-using Microsoft.Win32;
 using System.ComponentModel;
+using System.Data;
+using System.IO;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 
 namespace WpfApp1
 {
@@ -31,22 +33,22 @@ namespace WpfApp1
                 {
                     connection.Open();
                     string query = @"
-                      SELECT 
-                Products.ProductID, 
-                Products.Name, 
-                Categories.CategoryName AS Category, 
-                Products.Quantity, 
-                Products.Price, 
-                Products.ImagePath,  
-                Products.PurchasePrice
-            FROM 
-                Products
-            LEFT JOIN 
-                Categories ON Products.CategoryID = Categories.CategoryID";
+                        SELECT 
+                            p.ProductID, 
+                            p.Name, 
+                            c.CategoryName AS Category, 
+                            p.Quantity, 
+                            p.Price, 
+                            p.Image as ImageBytes,
+                            p.PurchasePrice
+                        FROM 
+                            Products p
+                        LEFT JOIN 
+                            Categories c ON p.CategoryID = c.CategoryID";
 
                     if (!string.IsNullOrEmpty(category) && category != "Усі категорії")
                     {
-                        query += " WHERE Categories.CategoryName = @Category";
+                        query += " WHERE c.CategoryName = @Category";
                     }
 
                     using (SqlCommand command = new SqlCommand(query, connection))
@@ -60,16 +62,15 @@ namespace WpfApp1
                         {
                             while (reader.Read())
                             {
-                                string imagePath = reader["ImagePath"].ToString();
                                 products.Add(new Product
                                 {
                                     ProductID = Convert.ToInt32(reader["ProductID"]),
                                     Name = reader["Name"].ToString(),
                                     Category = reader["Category"].ToString(),
                                     Quantity = Convert.ToInt32(reader["Quantity"]),
-                                    PurchasePrice = Convert.ToDecimal(reader["PurchasePrice"]),
                                     Price = Convert.ToDecimal(reader["Price"]),
-                                    ImagePath = File.Exists(imagePath) ? imagePath : null
+                                    PurchasePrice = Convert.ToDecimal(reader["PurchasePrice"]),
+                                    ImageBytes = reader["ImageBytes"] as byte[]
                                 });
                             }
                         }
@@ -80,12 +81,11 @@ namespace WpfApp1
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading products: {ex.Message}");
+                MessageBox.Show($"Помилка завантаження продуктів: {ex.Message}");
             }
         }
 
-
-        private void CategoryFilterComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void CategoryFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (CategoryFilterComboBox.SelectedItem != null)
             {
@@ -106,9 +106,48 @@ namespace WpfApp1
 
         private void EditProduct_Click(object sender, RoutedEventArgs e)
         {
+            if (ProductsListBox.SelectedItem is Product selectedProduct)
+            {
+                try
+                {
+                    using (SqlConnection connection = new SqlConnection(connectionString))
+                    {
+                        connection.Open();
+                        string query = @"SELECT p.*, c.CategoryName, s.Name as SupplierName 
+                                        FROM Products p
+                                        LEFT JOIN Categories c ON p.CategoryID = c.CategoryID
+                                        LEFT JOIN Suppliers s ON p.SupplierID = s.SupplierID
+                                        WHERE p.ProductID = @ProductID";
 
+                        SqlCommand command = new SqlCommand(query, connection);
+                        command.Parameters.AddWithValue("@ProductID", selectedProduct.ProductID);
+
+                        DataTable dt = new DataTable();
+                        dt.Load(command.ExecuteReader());
+
+                        if (dt.Rows.Count > 0)
+                        {
+                            DataRowView row = dt.DefaultView[0];
+                            AddEditProductWindow editWindow = new AddEditProductWindow(row);
+                            bool? result = editWindow.ShowDialog();
+
+                            if (result == true)
+                            {
+                                LoadProductsFromDatabase();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Помилка при редагуванні продукту: {ex.Message}");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Будь ласка, виберіть продукт для редагування.");
+            }
         }
-
 
         private void DeleteProduct_Click(object sender, RoutedEventArgs e)
         {
@@ -116,7 +155,6 @@ namespace WpfApp1
             {
                 try
                 {
-                    // Проверяем есть ли связанные заказы
                     if (HasRelatedOrders(selectedProduct.ProductID))
                     {
                         MessageBox.Show("Неможливо видалити продукт, оскільки існують пов'язані замовлення.",
@@ -166,6 +204,7 @@ namespace WpfApp1
                 }
             }
         }
+
         private void LoadCategories()
         {
             try
@@ -178,13 +217,13 @@ namespace WpfApp1
                     {
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
-                            List<string> categories = new List<string> { "Усі категорії" }; // Додаємо загальний пункт
+                            List<string> categories = new List<string> { "Усі категорії" };
                             while (reader.Read())
                             {
                                 categories.Add(reader["CategoryName"].ToString());
                             }
                             CategoryFilterComboBox.ItemsSource = categories;
-                            CategoryFilterComboBox.SelectedIndex = 0; // Вибираємо перший елемент
+                            CategoryFilterComboBox.SelectedIndex = 0;
                         }
                     }
                 }
@@ -194,15 +233,12 @@ namespace WpfApp1
                 MessageBox.Show($"Помилка завантаження категорій: {ex.Message}");
             }
         }
-        private void SearchTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+
+        private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // Якщо у тебе є список продуктів, можна фільтрувати їх тут
             string filter = SearchTextBox.Text.ToLower();
             ProductsListBox.ItemsSource = products.Where(p => p.Name.ToLower().Contains(filter)).ToList();
         }
-
-
-
     }
 
     public class Product : INotifyPropertyChanged
@@ -214,7 +250,7 @@ namespace WpfApp1
         private decimal _price;
         private string _description;
         private decimal _purchasePrice;
-        private string _imagePath;
+        private byte[] _imageBytes;
 
         public int ProductID
         {
@@ -258,14 +294,14 @@ namespace WpfApp1
             set { _purchasePrice = value; OnPropertyChanged(nameof(PurchasePrice)); }
         }
 
-        public string ImagePath
+        public byte[] ImageBytes
         {
-            get => _imagePath;
+            get => _imageBytes;
             set
             {
-                _imagePath = value;
-                OnPropertyChanged(nameof(ImagePath));
-                OnPropertyChanged(nameof(ProductImage)); // Важливо!
+                _imageBytes = value;
+                OnPropertyChanged(nameof(ImageBytes));
+                OnPropertyChanged(nameof(ProductImage));
             }
         }
 
@@ -273,11 +309,26 @@ namespace WpfApp1
         {
             get
             {
-                if (!string.IsNullOrWhiteSpace(ImagePath) && File.Exists(ImagePath))
+                if (ImageBytes == null || ImageBytes.Length == 0)
+                    return null;
+
+                try
                 {
-                    return new BitmapImage(new Uri(ImagePath));
+                    var image = new BitmapImage();
+                    using (var stream = new MemoryStream(ImageBytes))
+                    {
+                        image.BeginInit();
+                        image.CacheOption = BitmapCacheOption.OnLoad;
+                        image.StreamSource = stream;
+                        image.EndInit();
+                        image.Freeze();
+                    }
+                    return image;
                 }
-                return null;
+                catch
+                {
+                    return null;
+                }
             }
         }
 

@@ -77,13 +77,18 @@
                                 </Grid.RowDefinitions>
 
                                 <!-- Зображення продукту -->
-                                <Image Grid.Row="0" 
-                                       Source="{Binding ProductImage}" 
-                                       Width="120" 
-                                       Height="80" 
-                                       Stretch="Uniform"
-                                       HorizontalAlignment="Center"
-                                       Margin="0 0 0 5"/>
+                                <Border Grid.Row="0" 
+                                        Width="120" 
+                                        Height="80" 
+                                        Background="WhiteSmoke"
+                                        CornerRadius="4"
+                                        HorizontalAlignment="Center"
+                                        Margin="0 0 0 5">
+                                    <Image Source="{Binding ProductImage}" 
+                                           Stretch="Uniform"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                                </Border>
 
                                 <!-- Назва продукту -->
                                 <TextBlock Grid.Row="1" 
