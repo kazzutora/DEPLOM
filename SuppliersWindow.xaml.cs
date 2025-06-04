@@ -31,7 +31,7 @@ namespace WpfApp1
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT SupplierID, Name, ContactInfo, Category FROM Suppliers";
+                    string query = "SELECT SupplierID, Name, ContactInfo, Category , Email FROM Suppliers";
                     SqlDataAdapter adapter = new SqlDataAdapter(query, connection);
 
                     DataTable suppliersTable = new DataTable();
@@ -96,7 +96,7 @@ namespace WpfApp1
             if (suppliersView != null)
             {
                 string filter = SearchTextBox.Text;
-                suppliersView.RowFilter = $"Name LIKE '%{filter}%' OR ContactInfo LIKE '%{filter}%' OR Category LIKE '%{filter}%'";
+                suppliersView.RowFilter = $"Name LIKE '%{filter}%' OR ContactInfo LIKE '%{filter}%' OR Category LIKE '%{filter}%' OR Email LIKE '%{filter}%'";
             }
         }
         public void SearchButton_Click(object sender, RoutedEventArgs e)
@@ -105,7 +105,7 @@ namespace WpfApp1
 
             if (SuppliersDataGrid.ItemsSource is DataView dataView)
             {
-                dataView.RowFilter = $"Name LIKE '%{searchText}%' OR ContactInfo LIKE '%{searchText}%' OR Category LIKE '%{searchText}%'";
+                dataView.RowFilter = $"Name LIKE '%{searchText}%' OR ContactInfo LIKE '%{searchText}%' OR Category LIKE '%{searchText}%' OR Email LIKE '%{searchText}%'";
             }
         }
 

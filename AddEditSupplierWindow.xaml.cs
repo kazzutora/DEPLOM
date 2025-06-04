@@ -48,10 +48,19 @@ namespace WpfApp1
             string name = NameTextBox.Text;
             string contactInfo = ContactInfoTextBox.Text;
             string category = CategoryComboBox.SelectedItem as string;
+            string email = EmailTextBox.Text;
 
-            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(contactInfo) || string.IsNullOrWhiteSpace(category))
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(contactInfo) || string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(email))
             {
                 MessageBox.Show("Заповніть всі поля.");
+                return;
+            }
+
+            // Перевірка на наявність @ в email
+            if (!email.Contains("@"))
+            {
+                MessageBox.Show("Email повинен містити символ '@'");
+                EmailTextBox.Focus();
                 return;
             }
 
@@ -60,12 +69,13 @@ namespace WpfApp1
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
-                    string query = "INSERT INTO Suppliers (Name, ContactInfo, Category) VALUES (@Name, @ContactInfo, @Category)";
+                    string query = "INSERT INTO Suppliers (Name, ContactInfo, Category, Email) VALUES (@Name, @ContactInfo, @Category, @Email)";
                     SqlCommand command = new SqlCommand(query, connection);
 
                     command.Parameters.AddWithValue("@Name", name);
                     command.Parameters.AddWithValue("@ContactInfo", contactInfo);
                     command.Parameters.AddWithValue("@Category", category);
+                    command.Parameters.AddWithValue("@Email", email);
 
                     command.ExecuteNonQuery();
                 }

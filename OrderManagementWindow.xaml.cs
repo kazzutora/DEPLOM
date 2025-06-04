@@ -9,6 +9,9 @@ using iTextSharp.text.pdf;
 using iTextSharp.text;
 using System.IO;
 using System.Diagnostics;
+using System.Net.Mail;
+using System.Net;
+
 
 
 namespace WpfApp1
@@ -976,6 +979,25 @@ namespace WpfApp1
             catch (Exception ex)
             {
                 MessageBox.Show($"Помилка при створенні PDF: {ex.Message}", "Помилка");
+            }
+        }
+       
+
+        private string GetSupplierEmail(int supplierId)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    SqlCommand cmd = new SqlCommand("SELECT Email FROM Suppliers WHERE SupplierID = @SupplierID", connection);
+                    cmd.Parameters.AddWithValue("@SupplierID", supplierId);
+                    return cmd.ExecuteScalar()?.ToString();
+                }
+            }
+            catch
+            {
+                return null;
             }
         }
 

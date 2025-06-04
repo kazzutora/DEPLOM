@@ -113,7 +113,7 @@ namespace WpfApp1
         // Швидкі дії
         private void AddProductQuick_Click(object sender, RoutedEventArgs e)
         {
-            new ProductsWindow().ShowDialog();
+            new AddEditProductWindow().ShowDialog();
             RefreshDashboard(); // Оновлюємо дані після додавання
         }
 

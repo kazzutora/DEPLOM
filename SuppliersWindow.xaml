@@ -90,9 +90,13 @@
                         <DataGridTextColumn Header="Контакт" 
                                            Binding="{Binding ContactInfo}" 
                                            Width="2*"/>
+                        <DataGridTextColumn Header="Email" 
+                   Binding="{Binding Email}" 
+                   Width="*"/>
                         <DataGridTextColumn Header="Категорія" 
                                            Binding="{Binding Category}" 
                                            Width="*"/>
+                        
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>

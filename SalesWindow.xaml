@@ -206,16 +206,16 @@
                     Click="BtnSell_Click"/>
 
             <Button x:Name="BtnGenerateReport" 
-                    Content="Звіт PDF" 
-                    Width="100" 
+                    Content="Детальний звіт PDF" 
+                    Width="151" 
                     Margin="0,0,10,0"
                     Padding="8,4"
                     FontWeight="SemiBold"
                     Click="BtnGenerateReport_Click"/>
 
             <Button x:Name="BtnGenerateAnalyticalReport" 
-                    Content="Аналітичний звіт" 
-                    Width="150"
+                    Content="Аналітичний звіт PDF" 
+                    Width="166"
                     Padding="8,4"
                     FontWeight="SemiBold"
                     Margin="0,0,10,0"
