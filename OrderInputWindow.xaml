@@ -24,7 +24,8 @@
         <!-- Назва товару -->
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Товар:" Margin="0,0,5,5"/>
         <TextBlock x:Name="ProductNameTextBlock" Grid.Row="0" Grid.Column="1" Margin="0,0,0,5" FontWeight="Bold"/>
-
+        <!-- Прихований ID товару -->
+        <TextBlock x:Name="ProductIdTextBlock" Grid.Row="0" Grid.Column="1" Visibility="Collapsed"/>
         <!-- Ціна закупівлі -->
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Ціна закупівлі:" Margin="0,0,5,5"/>
         <TextBlock x:Name="PurchasePriceTextBlock" Grid.Row="1" Grid.Column="1" Margin="0,0,0,5"/>
@@ -59,9 +60,10 @@
         <TextBlock x:Name="TotalAmountTextBlock" Grid.Row="8" Grid.Column="1" Margin="0,0,0,5" FontWeight="Bold" Foreground="Green"/>
 
         <!-- Кнопки -->
-        <StackPanel Grid.Row="9" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-            <Button x:Name="CancelButton" Content="Скасувати" Width="100" Margin="0,0,10,0" Click="CancelButton_Click"/>
-            <Button x:Name="ConfirmButton" Content="Підтвердити" Width="100" Click="ConfirmButton_Click"/>
+        <StackPanel Grid.Row="9" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Width="374">
+            <Button x:Name="AddToCartButton" Content="Додати до кошика" Width="145" Margin="0,0,10,0" Click="AddToCartButton_Click"/>
+            <Button x:Name="ConfirmButton" Content="Підтвердити" Width="106" Click="ConfirmButton_Click" Height="29"/>
+            <Button x:Name="CancelButton" Content="Скасувати" Width="100" Click="CancelButton_Click"/>
         </StackPanel>
     </Grid>
 </Window>

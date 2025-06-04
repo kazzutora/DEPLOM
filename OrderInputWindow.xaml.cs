@@ -7,12 +7,14 @@ using System.Windows.Input;
 using System.Net;
 using System.Net.Mail;
 using System.IO;
+using static WpfApp1.OrderManagementWindow;
 
 namespace WpfApp1
 {
     public partial class OrderInputWindow : Window
     {
         public int QuantityOrdered { get; private set; }
+        public int ProductId { get; private set; }
         public int? SelectedSupplierId { get; private set; }
         public DateTime? ExpectedDate { get; private set; }
         private DataTable suppliersData;
@@ -22,11 +24,12 @@ namespace WpfApp1
         private readonly decimal purchasePrice;
         private readonly string connectionString = "Server=localhost;Database=StoreInventoryDB;Integrated Security=True;Encrypt=False;";
 
-        public OrderInputWindow(string productName, decimal purchasePrice,
+        public OrderInputWindow(int productId, string productName, decimal purchasePrice,
                               int currentQuantity, int minQuantity,
                               int currentSupplierId, string currentSupplierName)
         {
             InitializeComponent();
+            this.ProductId = productId;
             this.currentQuantity = currentQuantity;
             this.minQuantity = minQuantity;
             this.productName = productName;
@@ -60,6 +63,7 @@ namespace WpfApp1
                                     int currentQuantity, int minQuantity,
                                     int currentSupplierId, string currentSupplierName)
         {
+            ProductIdTextBlock.Text = ProductId.ToString();
             ProductNameTextBlock.Text = productName;
             PurchasePriceTextBlock.Text = purchasePrice.ToString("N2") + " грн";
             CurrentQuantityTextBlock.Text = currentQuantity.ToString();
@@ -242,12 +246,60 @@ namespace WpfApp1
                 }
             }
         }
+        // У OrderInputWindow.xaml.cs
+        private void AddToCartButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!ValidateInputs()) return;
 
+            var cartItem = new CartItem
+            {
+                ProductId = this.ProductId, // Використовуємо властивість замість TextBlock
+                ProductName = ProductNameTextBlock.Text,
+                Quantity = Convert.ToInt32(QuantityTextBox.Text),
+                PurchasePrice = purchasePrice,
+                SupplierId = SupplierComboBox.SelectedItem != null ?
+                    Convert.ToInt32(((DataRowView)SupplierComboBox.SelectedItem)["SupplierID"]) : 0,
+                SupplierName = SupplierComboBox.SelectedItem != null ?
+                    ((DataRowView)SupplierComboBox.SelectedItem)["Name"].ToString() : SupplierComboBox.Text,
+                ExpectedDate = ExpectedDatePicker.SelectedDate ?? DateTime.Now.AddDays(3)
+            };
+
+            ShoppingCart.Instance.AddItem(cartItem);
+            MessageBox.Show("Товар додано до кошика", "Успіх");
+        }
+        private bool ValidateInputs()
+        {
+            if (!int.TryParse(QuantityTextBox.Text, out int quantity) || quantity <= 0)
+            {
+                MessageBox.Show("Будь ласка, введіть коректну додатню кількість товару.",
+                              "Помилка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            if (SupplierComboBox.SelectedItem == null && !string.IsNullOrEmpty(SupplierComboBox.Text))
+            {
+                MessageBox.Show("Будь ласка, оберіть постачальника зі списку.",
+                              "Помилка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            return true;
+        }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
             Close();
+        }
+        public class CartItem
+        {
+            public int ProductId { get; set; }
+            public string ProductName { get; set; }
+            public int Quantity { get; set; }
+            public decimal PurchasePrice { get; set; }
+            public int SupplierId { get; set; }
+            public string SupplierName { get; set; }
+            public DateTime ExpectedDate { get; set; }
         }
     }
 }

@@ -423,7 +423,16 @@ namespace WpfApp1
                     supplierName = row["SupplierName"].ToString();
                 }
 
-                var orderDialog = new OrderInputWindow(productName, purchasePrice, currentQuantity, minQuantity, supplierId, supplierName);
+                // Оновлено: передаємо productId першим параметром
+                var orderDialog = new OrderInputWindow(
+                    productId,
+                    productName,
+                    purchasePrice,
+                    currentQuantity,
+                    minQuantity,
+                    supplierId,
+                    supplierName);
+
                 if (orderDialog.ShowDialog() == true)
                 {
                     int quantityOrdered = orderDialog.QuantityOrdered;
@@ -1013,6 +1022,50 @@ namespace WpfApp1
             cell.PaddingRight = 3;  // Правий відступ
             table.AddCell(cell);
         }
+        private void ViewCartButton_Click(object sender, RoutedEventArgs e)
+        {
+            var cartWindow = new ShoppingCartWindow();
+            if (cartWindow.ShowDialog() == true)
+            {
+                // Обробка підтвердження замовлення
+                CreateOrdersFromCart();
+                ShoppingCart.Instance.Clear();
+                LoadOrders();
+            }
+        }
+
+        private void CreateOrdersFromCart()
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    foreach (var item in ShoppingCart.Instance.Items)
+                    {
+                        SqlCommand cmd = new SqlCommand(
+                            "INSERT INTO Orders (ProductID, QuantityOrdered, OrderDate, Status, PurchasePrice, SupplierID, ExpectedDeliveryDate) " +
+                            "VALUES (@ProductID, @QuantityOrdered, GETDATE(), 'Нове', @PurchasePrice, @SupplierID, @ExpectedDeliveryDate)",
+                            connection);
+
+                        cmd.Parameters.AddWithValue("@ProductID", item.ProductId);
+                        cmd.Parameters.AddWithValue("@QuantityOrdered", item.Quantity);
+                        cmd.Parameters.AddWithValue("@PurchasePrice", item.PurchasePrice);
+                        cmd.Parameters.AddWithValue("@SupplierID", item.SupplierId > 0 ? (object)item.SupplierId : DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ExpectedDeliveryDate", item.ExpectedDate);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                MessageBox.Show($"Створено {ShoppingCart.Instance.Items.Count} замовлень з кошика!", "Успіх");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка при створенні замовлень: {ex.Message}", "Помилка");
+            }
+        }
+
         private class FinancialReportData
         {
             public DateTime StartDate { get; set; }
@@ -1024,6 +1077,7 @@ namespace WpfApp1
             public decimal NetProfit { get; set; }
             public int SalesCount { get; set; }
         }
+     
 
         private void RefreshBtn_Click(object sender, RoutedEventArgs e)
         {
