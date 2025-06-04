@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WpfApp1.ShoppingCartWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Кошик замовлень" Height="450" Width="711"
+        Title="Кошик замовлень" Height="450" Width="708"
         WindowStartupLocation="CenterOwner">
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -16,6 +16,7 @@
                 <DataGridTextColumn Header="Ціна" Binding="{Binding PurchasePrice, StringFormat={}{0:N2} грн}" Width="100"/>
                 <DataGridTextColumn Header="Сума" Binding="{Binding TotalPrice, StringFormat={}{0:N2} грн}" Width="100"/>
                 <DataGridTextColumn Header="Постачальник" Binding="{Binding SupplierName}" Width="*"/>
+                <DataGridTextColumn Header="Email постачальника" Binding="{Binding SupplierEmail}" Width="*"/>
                 <DataGridTextColumn Header="Дата поставки" Binding="{Binding ExpectedDate, StringFormat={}{0:dd.MM.yyyy}}" Width="120"/>
             </DataGrid.Columns>
         </DataGrid>

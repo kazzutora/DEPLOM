@@ -1042,23 +1042,33 @@ namespace WpfApp1
                 {
                     connection.Open();
 
-                    foreach (var item in ShoppingCart.Instance.Items)
-                    {
-                        SqlCommand cmd = new SqlCommand(
-                            "INSERT INTO Orders (ProductID, QuantityOrdered, OrderDate, Status, PurchasePrice, SupplierID, ExpectedDeliveryDate) " +
-                            "VALUES (@ProductID, @QuantityOrdered, GETDATE(), 'Нове', @PurchasePrice, @SupplierID, @ExpectedDeliveryDate)",
-                            connection);
+                    // Групуємо товари за постачальниками
+                    var ordersBySupplier = ShoppingCart.Instance.Items
+                        .GroupBy(item => item.SupplierId)
+                        .ToList();
 
-                        cmd.Parameters.AddWithValue("@ProductID", item.ProductId);
-                        cmd.Parameters.AddWithValue("@QuantityOrdered", item.Quantity);
-                        cmd.Parameters.AddWithValue("@PurchasePrice", item.PurchasePrice);
-                        cmd.Parameters.AddWithValue("@SupplierID", item.SupplierId > 0 ? (object)item.SupplierId : DBNull.Value);
-                        cmd.Parameters.AddWithValue("@ExpectedDeliveryDate", item.ExpectedDate);
-                        cmd.ExecuteNonQuery();
+                    foreach (var supplierGroup in ordersBySupplier)
+                    {
+                        foreach (var item in supplierGroup)
+                        {
+                            SqlCommand cmd = new SqlCommand(
+                                "INSERT INTO Orders (ProductID, QuantityOrdered, OrderDate, Status, PurchasePrice, SupplierID, ExpectedDeliveryDate) " +
+                                "VALUES (@ProductID, @QuantityOrdered, GETDATE(), 'Нове', @PurchasePrice, @SupplierID, @ExpectedDeliveryDate)",
+                                connection);
+
+                            cmd.Parameters.AddWithValue("@ProductID", item.ProductId);
+                            cmd.Parameters.AddWithValue("@QuantityOrdered", item.Quantity);
+                            cmd.Parameters.AddWithValue("@PurchasePrice", item.PurchasePrice);
+                            cmd.Parameters.AddWithValue("@SupplierID", item.SupplierId > 0 ? (object)item.SupplierId : DBNull.Value);
+                            cmd.Parameters.AddWithValue("@ExpectedDeliveryDate", item.ExpectedDate);
+                            cmd.ExecuteNonQuery();
+                        }
                     }
                 }
 
                 MessageBox.Show($"Створено {ShoppingCart.Instance.Items.Count} замовлень з кошика!", "Успіх");
+                ShoppingCart.Instance.Clear();
+                LoadOrders();
             }
             catch (Exception ex)
             {

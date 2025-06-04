@@ -251,16 +251,18 @@ namespace WpfApp1
         {
             if (!ValidateInputs()) return;
 
+            var selectedSupplier = (DataRowView)SupplierComboBox.SelectedItem;
+            string supplierEmail = selectedSupplier?["Email"]?.ToString();
+
             var cartItem = new CartItem
             {
-                ProductId = this.ProductId, // Використовуємо властивість замість TextBlock
+                ProductId = this.ProductId,
                 ProductName = ProductNameTextBlock.Text,
                 Quantity = Convert.ToInt32(QuantityTextBox.Text),
                 PurchasePrice = purchasePrice,
-                SupplierId = SupplierComboBox.SelectedItem != null ?
-                    Convert.ToInt32(((DataRowView)SupplierComboBox.SelectedItem)["SupplierID"]) : 0,
-                SupplierName = SupplierComboBox.SelectedItem != null ?
-                    ((DataRowView)SupplierComboBox.SelectedItem)["Name"].ToString() : SupplierComboBox.Text,
+                SupplierId = selectedSupplier != null ? Convert.ToInt32(selectedSupplier["SupplierID"]) : 0,
+                SupplierName = selectedSupplier != null ? selectedSupplier["Name"].ToString() : SupplierComboBox.Text,
+                SupplierEmail = supplierEmail,
                 ExpectedDate = ExpectedDatePicker.SelectedDate ?? DateTime.Now.AddDays(3)
             };
 
@@ -297,8 +299,10 @@ namespace WpfApp1
             public string ProductName { get; set; }
             public int Quantity { get; set; }
             public decimal PurchasePrice { get; set; }
+            public decimal TotalPrice => PurchasePrice * Quantity;
             public int SupplierId { get; set; }
             public string SupplierName { get; set; }
+            public string SupplierEmail { get; set; }
             public DateTime ExpectedDate { get; set; }
         }
     }
