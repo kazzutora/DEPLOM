@@ -24,9 +24,20 @@ namespace WpfApp1
         public EditMinQuantityWindow(string productName, int currentMinQuantity)
         {
             InitializeComponent();
+
+            // Встановлюємо заголовок вікна
             Title = $"Редагування: {productName}";
+
+            // Встановлюємо назву товару в інтерфейсі
+            ProductNameTextBlock.Text = productName;
+
+            // Встановлюємо поточну кількість
             CurrentMinText.Text = currentMinQuantity.ToString();
             NewMinTextBox.Text = currentMinQuantity.ToString();
+
+            // Фокус на новому полі вводу
+            NewMinTextBox.Focus();
+            NewMinTextBox.SelectAll();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -40,6 +51,8 @@ namespace WpfApp1
             {
                 MessageBox.Show("Введіть коректне число!", "Помилка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                NewMinTextBox.Focus();
+                NewMinTextBox.SelectAll();
             }
         }
     }

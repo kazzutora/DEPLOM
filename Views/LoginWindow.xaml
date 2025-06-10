@@ -1,14 +1,91 @@
 ﻿<Window x:Class="WpfApp1.Views.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Вхід" Height="250" Width="300">
-    <StackPanel Margin="15">
-        <TextBlock Text="Логін:"/>
-        <TextBox x:Name="txtUsername" Margin="0 5"/>
+        Title="Вхід до системи" 
+        Height="400" 
+        Width="500"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WindowBackgroundBrush}">
 
-        <TextBlock Text="Пароль:" Margin="0 10 0 0"/>
-        <PasswordBox x:Name="txtPassword" Margin="0 5"/>
+    <Window.Resources>
+        <Style TargetType="Button" BasedOn="{StaticResource FlatButton}">
+            <Setter Property="Padding" Value="15 8"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="0 15 0 0"/>
+        </Style>
 
-        <Button Content="Увійти" Click="Login_Click" Margin="0 15" Padding="10 3"/>
-    </StackPanel>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0 0 0 5"/>
+        </Style>
+
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+
+        <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
+            <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Border VerticalAlignment="Center" HorizontalAlignment="Center"
+                Background="{DynamicResource CardBrush}"
+                CornerRadius="10"
+                Padding="40 30"
+                Effect="{StaticResource CardShadow}"
+                Width="400">
+            <StackPanel>
+                <!-- Заголовок -->
+                <TextBlock Text="Вхід до POS System" 
+                           FontSize="24" 
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Margin="0 0 0 20"/>
+
+                <!-- Поле логіна -->
+                <TextBlock Text="Логін:"/>
+                <TextBox x:Name="txtUsername"
+                         FontSize="16"
+                         Height="40"/>
+
+                <!-- Поле пароля -->
+                <TextBlock Text="Пароль:" Margin="0 15 0 0"/>
+                <PasswordBox x:Name="txtPassword"
+                             Height="40"/>
+
+                <!-- Кнопка входу -->
+                <Button Content="Увійти" 
+                        Click="Login_Click"
+                        Background="{DynamicResource PrimaryBrush}"
+                        Foreground="White"
+                        FontWeight="SemiBold"/>
+
+                <!-- Підказка для тестового користувача -->
+                <TextBlock Text="* Використовуйте admin/admin для входу"
+                           Opacity="0.7"
+                           FontSize="12"
+                           Margin="0 15 0 0"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Футер -->
+        <TextBlock Text="POS System v1.0 © 2025" 
+                   VerticalAlignment="Bottom"
+                   HorizontalAlignment="Center"
+                   Margin="0 0 0 20"
+                   Opacity="0.6"/>
+    </Grid>
 </Window>
