@@ -240,17 +240,7 @@ namespace WpfApp1
 
                     try
                     {
-                        // Отримуємо доступну кількість товару
-                        int availableQuantity = GetAvailableQuantity(productId);
-
-                        if (quantity > availableQuantity)
-                        {
-                            transaction.Rollback();
-                            MessageBox.Show($"На складі недостатньо товару. Максимально доступно: {availableQuantity}",
-                                          "Помилка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                            return;
-                        }
-
+                        // Видаляємо перевірку доступності - вона тут не потрібна
                         // Оновлюємо статус замовлення
                         SqlCommand updateOrderCmd = new SqlCommand(
                             "UPDATE Orders SET Status = 'Підтверджено' WHERE OrderID = @OrderID",
