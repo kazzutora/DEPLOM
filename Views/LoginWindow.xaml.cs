@@ -1,7 +1,6 @@
-﻿// Views/LoginWindow.xaml.cs
+﻿using System.Windows;
 using WpfApp1.Services;
-using System.Windows;
-using WpfApp1;
+using WpfApp1.Models;
 
 namespace WpfApp1.Views
 {
@@ -16,19 +15,20 @@ namespace WpfApp1.Views
 
         private void Login_Click(object sender, RoutedEventArgs e)
         {
-           var user = _authService.Login(
-                txtUsername.Text,
-                txtPassword.Password
-            );
+            string username = txtUsername.Text;
+            string password = txtPassword.Password;
+
+            User user = _authService.Login(username, password);
 
             if (user != null)
             {
+                App.CurrentUser = user;
                 new MainWindow().Show();
                 this.Close();
             }
             else
             {
-                MessageBox.Show("Невірні дані!");
+                MessageBox.Show("Невірний логін або пароль");
             }
         }
     }

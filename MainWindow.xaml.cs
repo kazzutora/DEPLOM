@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.Windows;
+using WpfApp1.Models;
 
 namespace WpfApp1
 {
@@ -25,7 +26,61 @@ namespace WpfApp1
             DataContext = this;
             Loaded += MainWindow_Loaded;
             UpdateDailySales();
+            CheckPermissions();
+            DisplayUserInfo();
         }
+
+        private void DisplayUserInfo()
+        {
+            if (App.CurrentUser != null)
+            {
+                UserInfoText.Text = App.CurrentUser.Username;
+                UserRoleText.Text = App.CurrentUser.RoleName;
+            }
+        }
+
+        private void CheckPermissions()
+        {
+            if (App.CurrentUser == null)
+            {
+                MessageBox.Show("Користувач не авторизований");
+                Close();
+                return;
+            }
+
+            // Для всіх ролей
+            BtnSales.Visibility = Visibility.Visible;
+            MenuItemSales.Visibility = Visibility.Visible;
+
+            switch (App.CurrentUser.RoleName)
+            {
+                case "Адміністратор":
+                    // Повний доступ
+                    break;
+
+                case "Касир":
+                    // Приховуємо адміністративні функції
+                    MenuItemProgram.Visibility = Visibility.Collapsed;
+                    BtnProducts.Visibility = Visibility.Collapsed;
+                    BtnCategories.Visibility = Visibility.Collapsed;
+                    BtnSuppliers.Visibility = Visibility.Collapsed;
+                    BtnOrderManagement.Visibility = Visibility.Collapsed;
+                    BtnAddProduct.Visibility = Visibility.Collapsed;
+                    BtnViewReports.Visibility = Visibility.Collapsed;
+                    MenuItemProducts.Visibility = Visibility.Collapsed;
+                    MenuItemCategories.Visibility = Visibility.Collapsed;
+                    MenuItemSuppliers.Visibility = Visibility.Collapsed;
+                    break;
+
+                case "Менеджер":
+                    // Приховуємо деякі адміністративні функції
+                    MenuItemFile.Visibility = Visibility.Collapsed;
+                    MenuItemExit.Visibility = Visibility.Collapsed;
+                    BtnOrderManagement.Visibility = Visibility.Collapsed;
+                    break;
+            }
+        }
+
         public void UpdateDailySales()
         {
             try
@@ -36,9 +91,9 @@ namespace WpfApp1
                     DateTime tomorrow = today.AddDays(1);
 
                     DailySales = context.Sales
-                        .Include(s => s.Product) // Підвантажуємо пов'язані продукти
+                        .Include(s => s.Product)
                         .Where(s => s.SaleDate >= today && s.SaleDate < tomorrow)
-                        .Sum(s => s.QuantitySold * s.Product.Price); // Використовуємо Price з продукту
+                        .Sum(s => s.QuantitySold * s.Product.Price);
                 }
             }
             catch (Exception ex)
@@ -50,7 +105,6 @@ namespace WpfApp1
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Завантажити тему за замовчуванням
             ApplyTheme("Light");
         }
 
@@ -58,6 +112,13 @@ namespace WpfApp1
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void Logout_Click(object sender, RoutedEventArgs e)
+        {
+            App.CurrentUser = null;
+            new WpfApp1.Views.LoginWindow().Show();
+            this.Close();
         }
 
         private void New_Click(object sender, RoutedEventArgs e)
@@ -105,16 +166,18 @@ namespace WpfApp1
                 MessageBox.Show($"Помилка завантаження теми: {ex.Message}");
             }
         }
+
         public void RefreshDashboard()
         {
             UpdateDailySales();
             OnPropertyChanged(nameof(DailySales));
         }
+
         // Швидкі дії
         private void AddProductQuick_Click(object sender, RoutedEventArgs e)
         {
             new AddEditProductWindow().ShowDialog();
-            RefreshDashboard(); // Оновлюємо дані після додавання
+            RefreshDashboard();
         }
 
         private void CreateSaleQuick_Click(object sender, RoutedEventArgs e)

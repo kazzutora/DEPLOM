@@ -31,17 +31,17 @@
 
                 <!-- Меню -->
                 <Menu Grid.Column="1" HorizontalAlignment="Left">
-                    <MenuItem Header="Файл">
+                    <MenuItem x:Name="MenuItemFile" Header="Файл">
                         <MenuItem Header="Нове" Click="New_Click"/>
                         <MenuItem Header="Відкрити" Click="Open_Click"/>
                         <Separator/>
-                        <MenuItem Header="Вихід" Click="Exit_Click"/>
+                        <MenuItem x:Name="MenuItemExit" Header="Вихід" Click="Exit_Click"/>
                     </MenuItem>
-                    <MenuItem Header="Програма">
-                        <MenuItem Header="Продукти" Click="OpenProducts_Click"/>
-                        <MenuItem Header="Категорії" Click="OpenCategories_Click"/>
-                        <MenuItem Header="Постачальники" Click="OpenSuppliers_Click"/>
-                        <MenuItem Header="Продажі" Click="OpenSales_Click"/>
+                    <MenuItem x:Name="MenuItemProgram" Header="Програма">
+                        <MenuItem x:Name="MenuItemProducts" Header="Продукти" Click="OpenProducts_Click"/>
+                        <MenuItem x:Name="MenuItemCategories" Header="Категорії" Click="OpenCategories_Click"/>
+                        <MenuItem x:Name="MenuItemSuppliers" Header="Постачальники" Click="OpenSuppliers_Click"/>
+                        <MenuItem x:Name="MenuItemSales" Header="Продажі" Click="OpenSales_Click"/>
                     </MenuItem>
                     <MenuItem Header="Довідка">
                         <MenuItem Header="Про програму" Click="About_Click"/>
@@ -76,19 +76,19 @@
                         <Button Content="🏠 Головна" Click="Home_Click" 
                                 Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                                 Margin="8 4"/>
-                        <Button Content="📦 Продукти" Click="OpenProducts_Click" 
+                        <Button x:Name="BtnProducts" Content="📦 Продукти" Click="OpenProducts_Click" 
                                 Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                                 Margin="8 4"/>
-                        <Button Content="📂 Категорії" Click="OpenCategories_Click" 
+                        <Button x:Name="BtnCategories" Content="📂 Категорії" Click="OpenCategories_Click" 
                                 Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                                 Margin="8 4"/>
-                        <Button Content="🚛 Постачальники" Click="OpenSuppliers_Click" 
+                        <Button x:Name="BtnSuppliers" Content="🚛 Постачальники" Click="OpenSuppliers_Click" 
                                 Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                                 Margin="8 4"/>
-                        <Button Content="💰 Продажі" Click="OpenSales_Click" 
+                        <Button x:Name="BtnSales" Content="💰 Продажі" Click="OpenSales_Click" 
                                 Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                                 Margin="8 4"/>
-                        <Button Content="📋 Замовлення" Click="OpenOrderManagementBtn_Click" 
+                        <Button x:Name="BtnOrderManagement" Content="📋 Замовлення" Click="OpenOrderManagementBtn_Click" 
                                 Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                                 Margin="8 4"/>
                     </StackPanel>
@@ -97,15 +97,15 @@
                     <Border Background="{DynamicResource PrimaryBrushLowOpacity}" 
                             CornerRadius="8" Margin="8" Padding="12">
                         <StackPanel>
-                            <TextBlock Text="Адміністратор" FontWeight="SemiBold"/>
-                            <TextBlock Text="admin@example.com" Opacity="0.8" Margin="0 4 0 0"/>
+                            <TextBlock x:Name="UserInfoText" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="UserRoleText" Opacity="0.8" Margin="0 4 0 0"/>
                         </StackPanel>
                     </Border>
 
                     <Button Content="⚙️ Налаштування" 
                             Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                             Margin="8 16 8 8"/>
-                    <Button Content="🚪 Вийти" 
+                    <Button Content="🚪 Вийти" Click="Logout_Click"
                             Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                             Margin="8"/>
                 </StackPanel>
@@ -165,15 +165,15 @@
                             <!-- Швидкі дії -->
                             <TextBlock Text="Швидкі дії" FontSize="18" FontWeight="Bold" Margin="0 0 0 16"/>
                             <WrapPanel>
-                                <Button Content="Додати продукт" 
+                                <Button x:Name="BtnAddProduct" Content="Додати продукт" 
             Click="AddProductQuick_Click"
             Margin="10" Padding="15 5"/>
 
-                                <Button Content="Створити продаж" 
+                                <Button x:Name="BtnCreateSale" Content="Створити продаж" 
             Click="CreateSaleQuick_Click"
             Margin="10" Padding="15 5"/>
 
-                                <Button Content="Перегляд звітів" 
+                                <Button x:Name="BtnViewReports" Content="Перегляд звітів" 
             Click="ViewReports_Click"
             Margin="10" Padding="15 5"/>
                             </WrapPanel>

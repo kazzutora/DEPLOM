@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Windows;
+using WpfApp1.Models;
 
 namespace WpfApp1
 {
@@ -9,6 +10,7 @@ namespace WpfApp1
     /// </summary>
     public partial class App : Application
     {
+        public static User CurrentUser { get; set; }
     }
 
 }

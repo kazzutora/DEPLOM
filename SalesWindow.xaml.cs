@@ -31,6 +31,14 @@ namespace WpfApp1
 
         public SalesWindow()
         {
+            if (App.CurrentUser == null ||
+          (App.CurrentUser.RoleName != "Адміністратор" &&
+           App.CurrentUser.RoleName != "Касир"))
+            {
+                MessageBox.Show("Доступ заборонено! Потрібні права адміністратора або касира");
+                Close();
+                return;
+            }
             InitializeComponent();
             DataContext = this;
 

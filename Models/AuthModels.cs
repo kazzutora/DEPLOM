@@ -17,11 +17,14 @@ namespace WpfApp1.Models
         public string Role { get; set; }
         public string FullName { get; set; }
         public bool IsActive { get; set; } = true;
+        public string RoleName { get; set; }
+        public int UserId { get; set; }
     }
 
     public class Role
     {
         public string Name { get; set; }
+        public int Id { get; set; }
         public List<string> Permissions { get; set; } = new List<string>();
     }
 

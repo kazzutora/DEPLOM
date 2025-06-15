@@ -26,6 +26,12 @@ namespace WpfApp1
 
         public OrderManagementWindow()
         {
+            if (App.CurrentUser?.RoleName != "Адміністратор")
+            {
+                MessageBox.Show("Доступ заборонено! Потрібні права адміністратора");
+                Close();
+                return;
+            }
             InitializeComponent();
             StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
             EndDatePicker.SelectedDate = DateTime.Today;

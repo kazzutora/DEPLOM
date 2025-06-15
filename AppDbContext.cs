@@ -11,6 +11,10 @@ namespace WpfApp1
         public DbSet<Category> Categories { get; set; }
         public DbSet<Sale> Sales { get; set; }
         public DbSet<SaleDetail> SaleDetails { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
+
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -25,6 +29,7 @@ namespace WpfApp1
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Role>().HasKey(r => r.Id);
             // Конфігурація відношень між таблицями
             modelBuilder.Entity<SaleDetail>()
                 .HasOne(sd => sd.Sale)
