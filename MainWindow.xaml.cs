@@ -103,7 +103,10 @@ namespace WpfApp1
             LoadStatistics();
             SetupAutoRefresh();
         }
-
+        private void OpenWriteOffWindow_Click(object sender, RoutedEventArgs e)
+        {
+            new WriteOffWindow().ShowDialog();
+        }
         private void LoadStatistics()
         {
             try

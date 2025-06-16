@@ -188,6 +188,9 @@
                         <Button x:Name="BtnOrderManagement" Content="📋 Замовлення" Click="OpenOrderManagementBtn_Click" 
                                 Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                                 Margin="8 4"/>
+                        <Button x:Name="BtnWriteOff" Content="📝 Списання" Click="OpenWriteOffWindow_Click" 
+         Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
+         Margin="8 4"/>
                     </StackPanel>
 
                     <!-- Профіль -->
