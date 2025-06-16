@@ -344,10 +344,7 @@ namespace WpfApp1
                                 UpdateMainWindowDailySales();
 
                                 // Додано: Оновлення головного вікна
-                                if (Application.Current.MainWindow is MainWindow mainWindow)
-                                {
-                                    mainWindow.RefreshDashboard();
-                                }
+                                
                             }
                             catch (Exception ex)
                             {
@@ -363,6 +360,7 @@ namespace WpfApp1
                 MessageBox.Show($"Помилка: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+      
 
         private void UpdateMainWindowDailySales()
         {
@@ -371,10 +369,7 @@ namespace WpfApp1
                 .OfType<MainWindow>()
                 .FirstOrDefault();
 
-            if (mainWindow != null)
-            {
-                mainWindow.UpdateDailySales();
-            }
+          
         }
 
         private void BtnGenerateReport_Click(object sender, RoutedEventArgs e)
@@ -1110,4 +1105,5 @@ namespace WpfApp1
         // Навігаційна властивість до продукту
         public virtual Product Product { get; set; }
     }
+   
 }

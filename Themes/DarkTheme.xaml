@@ -9,6 +9,7 @@
     <Color x:Key="PrimaryBrushLowOpacityDark">#330078D7</Color>
 
     <!-- Пензлі -->
+    <SolidColorBrush x:Key="ControlBackground" Color="#FF333338"/>
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundDark}"/>
     <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardDark}"/>
     <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextDark}"/>

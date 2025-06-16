@@ -10,6 +10,7 @@
             <Color x:Key="TextColor">#FF000000</Color>
             <Color x:Key="BackgroundColor">#FFF0F0F0</Color>
             <Color x:Key="CardColor">#FFFFFFFF</Color>
+            <Color x:Key="ShadowColor">#40000000</Color>
 
             <!-- Додано нові кольори для форми входу -->
             <Color x:Key="InputBackgroundColor">#FFFCFCFC</Color>
