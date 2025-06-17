@@ -1,5 +1,5 @@
-﻿using ClosedXML.Excel; // Для роботи з Excel
-using iTextSharp.text; // Для роботи з PDF
+﻿using ClosedXML.Excel;
+using iTextSharp.text;
 using iTextSharp.text.pdf;
 using System.Data;
 using Microsoft.Data.SqlClient;
@@ -9,6 +9,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using System.ComponentModel;
 
 namespace WpfApp1
 {
@@ -23,6 +24,25 @@ namespace WpfApp1
             LoadWriteOffHistory();
             StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
             EndDatePicker.SelectedDate = DateTime.Today;
+            ProductComboBox.SelectionChanged += ProductComboBox_SelectionChanged;
+        }
+
+        private void ApplyFilter_Click(object sender, RoutedEventArgs e)
+        {
+            LoadWriteOffHistory();
+        }
+
+        private void ResetFilter_Click(object sender, RoutedEventArgs e)
+        {
+            StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
+            EndDatePicker.SelectedDate = DateTime.Today;
+            SearchTextBox.Text = "";
+            LoadWriteOffHistory();
+        }
+
+        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadWriteOffHistory();
         }
 
         private void LoadProducts()
@@ -30,7 +50,7 @@ namespace WpfApp1
             try
             {
                 ProductComboBox.Items.Clear();
-                string query = "SELECT ProductID, Name, Quantity, Price, CategoryID FROM Products";
+                string query = "SELECT ProductID, Name, Quantity FROM Products WHERE Quantity > 0";
 
                 using (var connection = new SqlConnection(connectionString))
                 using (var command = new SqlCommand(query, connection))
@@ -43,9 +63,7 @@ namespace WpfApp1
                         {
                             ProductID = reader.GetInt32(0),
                             Name = reader.GetString(1),
-                            Quantity = reader.GetInt32(2),
-                            Price = reader.GetDecimal(3),
-                            CategoryID = reader.GetInt32(4)
+                            Quantity = reader.GetInt32(2)
                         });
                     }
                 }
@@ -70,7 +88,7 @@ namespace WpfApp1
         {
             try
             {
-                string query = @"SELECT p.Name, p.Description, c.CategoryName, p.Price
+                string query = @"SELECT p.Name, c.CategoryName, p.Price
                                 FROM Products p
                                 JOIN Categories c ON p.CategoryID = c.CategoryID
                                 WHERE p.ProductID = @ProductID";
@@ -85,8 +103,7 @@ namespace WpfApp1
                     {
                         ProductInfoText.Text = $"{reader["Name"]}\n" +
                                               $"Категорія: {reader["CategoryName"]}\n" +
-                                              $"Ціна: {reader["Price"]:N2} грн\n" +
-                                              $"Опис: {reader["Description"]}";
+                                              $"Ціна: {Convert.ToDecimal(reader["Price"]):N2} грн";
                     }
                 }
             }
@@ -122,43 +139,60 @@ namespace WpfApp1
 
             string reason = (ReasonComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Інше";
             string description = DescriptionTextBox.Text;
-            string userName = App.CurrentUser?.Username ?? "Система";
+            string userName = App.CurrentUser?.Username ?? "Невідомий користувач";
 
             try
             {
-                // Зберегти списання в базі даних
-                string insertQuery = @"
-                    INSERT INTO WriteOffs (ProductID, Quantity, Reason, Description, WriteOffDate, UserName)
-                    VALUES (@ProductID, @Quantity, @Reason, @Description, GETDATE(), @UserName)";
-
                 using (var connection = new SqlConnection(connectionString))
-                using (var command = new SqlCommand(insertQuery, connection))
                 {
-                    command.Parameters.AddWithValue("@ProductID", productId);
-                    command.Parameters.AddWithValue("@Quantity", quantity);
-                    command.Parameters.AddWithValue("@Reason", reason);
-                    command.Parameters.AddWithValue("@Description", description);
-                    command.Parameters.AddWithValue("@UserName", userName);
-
                     connection.Open();
-                    command.ExecuteNonQuery();
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Insert write-off record
+                            string insertQuery = @"
+                        INSERT INTO WriteOffs (ProductID, Quantity, Reason, Description, WriteOffDate, UserName)
+                        VALUES (@ProductID, @Quantity, @Reason, @Description, GETDATE(), @UserName)";
+
+                            using (var command = new SqlCommand(insertQuery, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@ProductID", productId);
+                                command.Parameters.AddWithValue("@Quantity", quantity);
+                                command.Parameters.AddWithValue("@Reason", reason);
+                                command.Parameters.AddWithValue("@Description", description);
+                                command.Parameters.AddWithValue("@UserName", userName);
+                                command.ExecuteNonQuery();
+                            }
+
+                            // Update product quantity
+                            string updateQuery = "UPDATE Products SET Quantity = Quantity - @Quantity WHERE ProductID = @ProductID";
+                            using (var command = new SqlCommand(updateQuery, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@ProductID", productId);
+                                command.Parameters.AddWithValue("@Quantity", quantity);
+                                command.ExecuteNonQuery();
+                            }
+
+                            transaction.Commit();
+                            MessageBox.Show("Товар успішно списано");
+
+                            // Reload products to refresh combo box
+                            LoadProducts();
+
+                            // Update available quantity display
+                            AvailableQuantityText.Text = (availableQuantity - quantity).ToString();
+
+                            ClearForm();
+                            LoadWriteOffHistory();
+                        }
+                        catch (Exception ex)
+                        {
+                            // Remove explicit rollback - transaction will auto-rollback on dispose
+                            MessageBox.Show($"Помилка при списанні товару: {ex.Message}");
+                        }
+                    }
                 }
-
-                // Оновити кількість товару
-                string updateQuery = "UPDATE Products SET Quantity = Quantity - @Quantity WHERE ProductID = @ProductID";
-                using (var connection = new SqlConnection(connectionString))
-                using (var command = new SqlCommand(updateQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@ProductID", productId);
-                    command.Parameters.AddWithValue("@Quantity", quantity);
-
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                }
-
-                MessageBox.Show("Товар успішно списано");
-                ClearForm();
-                LoadWriteOffHistory();
             }
             catch (Exception ex)
             {
@@ -168,12 +202,10 @@ namespace WpfApp1
 
         private void ClearForm()
         {
-            ProductComboBox.SelectedIndex = -1;
             QuantityTextBox.Text = "";
             ReasonComboBox.SelectedIndex = -1;
             DescriptionTextBox.Text = "";
-            AvailableQuantityText.Text = "";
-            ProductInfoText.Text = "";
+            // Don't clear product info - keep it visible after write-off
         }
 
         private void LoadWriteOffHistory()
@@ -190,7 +222,9 @@ namespace WpfApp1
                     FROM WriteOffs w
                     JOIN Products p ON w.ProductID = p.ProductID
                     WHERE w.WriteOffDate BETWEEN @StartDate AND @EndDate
-                    AND (p.Name LIKE @SearchText OR w.Reason LIKE @SearchText OR w.Description LIKE @SearchText)
+                    AND (p.Name LIKE '%' + @SearchText + '%' 
+                         OR w.Reason LIKE '%' + @SearchText + '%' 
+                         OR w.Description LIKE '%' + @SearchText + '%')
                     ORDER BY w.WriteOffDate DESC";
 
                 using (var connection = new SqlConnection(connectionString))
@@ -198,7 +232,7 @@ namespace WpfApp1
                 {
                     command.Parameters.AddWithValue("@StartDate", startDate);
                     command.Parameters.AddWithValue("@EndDate", endDate.AddDays(1));
-                    command.Parameters.AddWithValue("@SearchText", $"%{searchText}%");
+                    command.Parameters.AddWithValue("@SearchText", searchText);
 
                     var adapter = new SqlDataAdapter(command);
                     var dataTable = new DataTable();
@@ -213,44 +247,27 @@ namespace WpfApp1
             }
         }
 
-        private void ApplyFilter_Click(object sender, RoutedEventArgs e)
-        {
-            LoadWriteOffHistory();
-        }
-
-        private void ResetFilter_Click(object sender, RoutedEventArgs e)
-        {
-            StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
-            EndDatePicker.SelectedDate = DateTime.Today;
-            SearchTextBox.Text = "";
-            LoadWriteOffHistory();
-        }
-
-        private void SearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            LoadWriteOffHistory();
-        }
-
         private void ExportPdfButton_Click(object sender, RoutedEventArgs e)
         {
-            try
+            var worker = new BackgroundWorker();
+            worker.DoWork += (s, args) =>
             {
-                var saveDialog = new SaveFileDialog
+                Dispatcher.Invoke(() =>
                 {
-                    Filter = "PDF files (*.pdf)|*.pdf",
-                    FileName = $"Звіт_списаних_товарів_{DateTime.Now:yyyyMMdd_HHmm}.pdf"
-                };
+                    var saveDialog = new SaveFileDialog
+                    {
+                        Filter = "PDF files (*.pdf)|*.pdf",
+                        FileName = $"Звіт_списаних_товарів_{DateTime.Now:yyyyMMdd_HHmm}.pdf"
+                    };
 
-                if (saveDialog.ShowDialog() == true)
-                {
-                    GeneratePdfReport(saveDialog.FileName);
-                    Process.Start(new ProcessStartInfo(saveDialog.FileName) { UseShellExecute = true });
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Помилка при експорті PDF: {ex.Message}");
-            }
+                    if (saveDialog.ShowDialog() == true)
+                    {
+                        GeneratePdfReport(saveDialog.FileName);
+                        Process.Start(new ProcessStartInfo(saveDialog.FileName) { UseShellExecute = true });
+                    }
+                });
+            };
+            worker.RunWorkerAsync();
         }
 
         private void GeneratePdfReport(string filePath)
@@ -302,7 +319,7 @@ namespace WpfApp1
                     {
                         foreach (DataRowView row in dataView)
                         {
-                            AddPdfCell(table, row["WriteOffDate"].ToString(), normalFont);
+                            AddPdfCell(table, Convert.ToDateTime(row["WriteOffDate"]).ToString("dd.MM.yyyy HH:mm"), normalFont);
                             AddPdfCell(table, row["ProductName"].ToString(), normalFont);
                             AddPdfCell(table, row["Quantity"].ToString(), normalFont);
                             AddPdfCell(table, row["Reason"].ToString(), normalFont);
@@ -317,7 +334,7 @@ namespace WpfApp1
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Помилка при створенні PDF: {ex.Message}");
+                Dispatcher.Invoke(() => MessageBox.Show($"Помилка при створенні PDF: {ex.Message}"));
             }
         }
 
@@ -330,67 +347,79 @@ namespace WpfApp1
 
         private void ExportExcelButton_Click(object sender, RoutedEventArgs e)
         {
-            try
+            var worker = new BackgroundWorker();
+            worker.DoWork += (s, args) =>
             {
-                var saveDialog = new SaveFileDialog
+                Dispatcher.Invoke(() =>
                 {
-                    Filter = "Excel files (*.xlsx)|*.xlsx",
-                    FileName = $"Звіт_списаних_товарів_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
-                };
-
-                if (saveDialog.ShowDialog() == true)
-                {
-                    var dataView = HistoryDataGrid.ItemsSource as DataView;
-                    if (dataView != null && dataView.Table.Rows.Count > 0)
+                    var saveDialog = new SaveFileDialog
                     {
-                        using (var workbook = new XLWorkbook())
+                        Filter = "Excel files (*.xlsx)|*.xlsx",
+                        FileName = $"Звіт_списаних_товарів_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+                    };
+
+                    if (saveDialog.ShowDialog() == true)
+                    {
+                        var dataView = HistoryDataGrid.ItemsSource as DataView;
+                        if (dataView != null && dataView.Table.Rows.Count > 0)
                         {
-                            var worksheet = workbook.Worksheets.Add("Списання товарів");
-
-                            // Заголовки
-                            for (int i = 0; i < HistoryDataGrid.Columns.Count; i++)
+                            try
                             {
-                                worksheet.Cell(1, i + 1).Value = HistoryDataGrid.Columns[i].Header.ToString();
-                            }
-
-                            // Дані
-                            for (int row = 0; row < dataView.Count; row++)
-                            {
-                                for (int col = 0; col < dataView.Table.Columns.Count; col++)
+                                using (var workbook = new XLWorkbook())
                                 {
-                                    worksheet.Cell(row + 2, col + 1).Value = dataView[row][col]?.ToString();
+                                    var worksheet = workbook.Worksheets.Add("Списання товарів");
+
+                                    // Заголовки
+                                    for (int i = 0; i < HistoryDataGrid.Columns.Count; i++)
+                                    {
+                                        worksheet.Cell(1, i + 1).Value = HistoryDataGrid.Columns[i].Header.ToString();
+                                        worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+                                        worksheet.Cell(1, i + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                                    }
+
+                                    // Дані
+                                    for (int row = 0; row < dataView.Count; row++)
+                                    {
+                                        for (int col = 0; col < dataView.Table.Columns.Count; col++)
+                                        {
+                                            if (dataView.Table.Columns[col].DataType == typeof(DateTime))
+                                            {
+                                                worksheet.Cell(row + 2, col + 1).Value = Convert.ToDateTime(dataView[row][col]);
+                                                worksheet.Cell(row + 2, col + 1).Style.DateFormat.Format = "dd.mm.yyyy HH:mm";
+                                            }
+                                            else
+                                            {
+                                                worksheet.Cell(row + 2, col + 1).Value = dataView[row][col]?.ToString();
+                                            }
+                                        }
+                                    }
+
+                                    // Автопідбір ширини стовпців
+                                    worksheet.Columns().AdjustToContents();
+
+                                    workbook.SaveAs(saveDialog.FileName);
                                 }
+
+                                // Відкрити створений файл
+                                Process.Start(new ProcessStartInfo(saveDialog.FileName) { UseShellExecute = true });
                             }
-
-                            // Спрощене форматування (без XLColor)
-                            var headerRange = worksheet.Range(1, 1, 1, dataView.Table.Columns.Count);
-                            headerRange.Style.Font.Bold = true;
-                            headerRange.Style.Fill.BackgroundColor = XLColor.FromArgb(211, 211, 211); // Світло-сірий
-
-                            // Автопідбір ширини стовпців
-                            worksheet.Columns().AdjustToContents();
-
-                            workbook.SaveAs(saveDialog.FileName);
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show($"Помилка при експорті Excel: {ex.Message}");
+                            }
                         }
-
-                        // Відкрити створений файл
-                        Process.Start(new ProcessStartInfo(saveDialog.FileName) { UseShellExecute = true });
+                        else
+                        {
+                            MessageBox.Show("Немає даних для експорту");
+                        }
                     }
-                    else
-                    {
-                        MessageBox.Show("Немає даних для експорту");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Помилка при експорті Excel: {ex.Message}");
-            }
+                });
+            };
+            worker.RunWorkerAsync();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = false;
             Close();
         }
     }
