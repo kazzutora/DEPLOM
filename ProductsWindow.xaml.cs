@@ -7,6 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace WpfApp1
@@ -15,12 +18,50 @@ namespace WpfApp1
     {
         private List<Product> products;
         private string connectionString = "Server=localhost;Database=StoreInventoryDB;Integrated Security=True;Encrypt=False;";
+        private UniformGrid itemsPanel;
 
         public ProductsWindow()
         {
             InitializeComponent();
+            Loaded += ProductsWindow_Loaded;
             LoadCategories();
             LoadProductsFromDatabase();
+            SizeChanged += Window_SizeChanged;
+        }
+
+        private void ProductsWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            itemsPanel = FindVisualChild<UniformGrid>(ProductsListBox);
+            UpdateColumns();
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateColumns();
+        }
+
+        private void UpdateColumns()
+        {
+            if (itemsPanel != null && ProductsListBox.ActualWidth > 0)
+            {
+                double itemWidth = 200;
+                int columns = Math.Max(1, (int)(ProductsListBox.ActualWidth / itemWidth));
+                itemsPanel.Columns = columns;
+            }
+        }
+
+        private T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T result)
+                    return result;
+                var descendant = FindVisualChild<T>(child);
+                if (descendant != null)
+                    return descendant;
+            }
+            return null;
         }
 
         private void LoadProductsFromDatabase(string category = null)
@@ -78,6 +119,7 @@ namespace WpfApp1
                 }
 
                 ProductsListBox.ItemsSource = products;
+                UpdateColumns();
             }
             catch (Exception ex)
             {
@@ -238,6 +280,14 @@ namespace WpfApp1
         {
             string filter = SearchTextBox.Text.ToLower();
             ProductsListBox.ItemsSource = products.Where(p => p.Name.ToLower().Contains(filter)).ToList();
+        }
+
+        private void Product_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                EditProduct_Click(sender, e);
+            }
         }
     }
 
