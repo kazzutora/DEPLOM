@@ -74,18 +74,21 @@ namespace WpfApp1
                 {
                     connection.Open();
                     string query = @"
-                        SELECT 
-                            p.ProductID, 
-                            p.Name, 
-                            c.CategoryName AS Category, 
-                            p.Quantity, 
-                            p.Price, 
-                            p.Image as ImageBytes,
-                            p.PurchasePrice
-                        FROM 
-                            Products p
-                        LEFT JOIN 
-                            Categories c ON p.CategoryID = c.CategoryID";
+                       SELECT 
+        p.ProductID, 
+        p.Name, 
+        c.CategoryName AS Category, 
+        p.Quantity, 
+        p.Price, 
+        p.Image as ImageBytes,
+        p.PurchasePrice,
+        s.Name AS SupplierName
+    FROM 
+        Products p
+    LEFT JOIN 
+        Categories c ON p.CategoryID = c.CategoryID
+    LEFT JOIN 
+        Suppliers s ON p.SupplierID = s.SupplierID";
 
                     if (!string.IsNullOrEmpty(category) && category != "Усі категорії")
                     {
@@ -111,7 +114,8 @@ namespace WpfApp1
                                     Quantity = Convert.ToInt32(reader["Quantity"]),
                                     Price = Convert.ToDecimal(reader["Price"]),
                                     PurchasePrice = Convert.ToDecimal(reader["PurchasePrice"]),
-                                    ImageBytes = reader["ImageBytes"] as byte[]
+                                    ImageBytes = reader["ImageBytes"] as byte[],
+                                    SupplierName = reader["SupplierName"]?.ToString()
                                 });
                             }
                         }
@@ -150,44 +154,16 @@ namespace WpfApp1
         {
             if (ProductsListBox.SelectedItem is Product selectedProduct)
             {
-                try
+                var editWindow = new EditProductWindow(selectedProduct);
+                if (editWindow.ShowDialog() == true)
                 {
-                    using (SqlConnection connection = new SqlConnection(connectionString))
-                    {
-                        connection.Open();
-                        string query = @"SELECT p.*, c.CategoryName, s.Name as SupplierName 
-                                        FROM Products p
-                                        LEFT JOIN Categories c ON p.CategoryID = c.CategoryID
-                                        LEFT JOIN Suppliers s ON p.SupplierID = s.SupplierID
-                                        WHERE p.ProductID = @ProductID";
-
-                        SqlCommand command = new SqlCommand(query, connection);
-                        command.Parameters.AddWithValue("@ProductID", selectedProduct.ProductID);
-
-                        DataTable dt = new DataTable();
-                        dt.Load(command.ExecuteReader());
-
-                        if (dt.Rows.Count > 0)
-                        {
-                            DataRowView row = dt.DefaultView[0];
-                            AddEditProductWindow editWindow = new AddEditProductWindow(row);
-                            bool? result = editWindow.ShowDialog();
-
-                            if (result == true)
-                            {
-                                LoadProductsFromDatabase();
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Помилка при редагуванні продукту: {ex.Message}");
+                    // Оновлюємо відображення
+                    ProductsListBox.Items.Refresh();
                 }
             }
             else
             {
-                MessageBox.Show("Будь ласка, виберіть продукт для редагування.");
+                MessageBox.Show("Будь ласка, виберіть продукт для редагування.", "Увага", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -301,6 +277,12 @@ namespace WpfApp1
         private string _description;
         private decimal _purchasePrice;
         private byte[] _imageBytes;
+        private string _supplierName;
+        public string SupplierName
+        {
+            get => _supplierName;
+            set { _supplierName = value; OnPropertyChanged(nameof(SupplierName)); }
+        }
 
         public int ProductID
         {
