@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
@@ -95,15 +96,81 @@ namespace WpfApp1
                 }
             }
         }
+        private void CheckPermissions()
+        {
+            if (App.CurrentUser == null)
+            {
+                MessageBox.Show("Користувач не авторизований");
+                Close();
+                return;
+            }
+
+            // Спочатку приховуємо всі кнопки
+            BtnSales.Visibility = Visibility.Collapsed;
+            BtnProducts.Visibility = Visibility.Collapsed;
+            BtnCategories.Visibility = Visibility.Collapsed;
+            BtnSuppliers.Visibility = Visibility.Collapsed;
+            BtnOrderManagement.Visibility = Visibility.Collapsed;
+            BtnAddProduct.Visibility = Visibility.Collapsed;
+            BtnWriteOff.Visibility = Visibility.Collapsed;
+
+            // Додаємо перевірку ролей в нижньому регістрі
+            string role = App.CurrentUser.RoleName.ToLower();
+
+            switch (role)
+            {
+                case "адміністратор":
+                case "administrator":
+                    // Адміністратор має всі права
+                    BtnSales.Visibility = Visibility.Visible;
+                    BtnProducts.Visibility = Visibility.Visible;
+                    BtnCategories.Visibility = Visibility.Visible;
+                    BtnSuppliers.Visibility = Visibility.Visible;
+                    BtnOrderManagement.Visibility = Visibility.Visible;
+                    BtnAddProduct.Visibility = Visibility.Visible;
+                    BtnWriteOff.Visibility = Visibility.Visible;
+                    break;
+
+                case "менеджер":
+                case "manager":
+                    // Менеджер: продажі, замовлення та списання
+                    BtnSales.Visibility = Visibility.Visible;
+                    BtnOrderManagement.Visibility = Visibility.Visible;
+                    BtnWriteOff.Visibility = Visibility.Visible;
+                    break;
+
+                case "касир":
+                case "cashier":
+                    // Касир: тільки продажі
+                    BtnSales.Visibility = Visibility.Visible;
+                    break;
+            }
+        }
 
         public MainWindow()
         {
             LoadTheme();
             InitializeComponent();
             DataContext = this;
-            Loaded += MainWindow_Loaded;
+            Loaded += (s, e) =>
+            {
+                LoadStatistics();
+                SetupAutoRefresh();
+            };
             CheckPermissions();
             DisplayUserInfo();
+            // Додати обробники подій для кнопок
+            BtnSales.Click -= OpenSales_Click; // Перед підпискою відпишемось
+            BtnSales.Click += OpenSales_Click;
+
+            BtnOrderManagement.Click -= OpenOrderManagementBtn_Click;
+            BtnOrderManagement.Click += OpenOrderManagementBtn_Click;
+
+            BtnWriteOff.Click -= OpenWriteOffWindow_Click;
+            BtnWriteOff.Click += OpenWriteOffWindow_Click;
+
+            // Вивід для налагодження
+            Debug.WriteLine($"Поточний користувач: {App.CurrentUser?.Username}, Роль: {App.CurrentUser?.RoleName}");
         }
         private void LoadTheme()
         {
@@ -224,33 +291,7 @@ namespace WpfApp1
             }
         }
 
-        private void CheckPermissions()
-        {
-            if (App.CurrentUser == null)
-            {
-                MessageBox.Show("Користувач не авторизований");
-                Close();
-                return;
-            }
-
-            BtnSales.Visibility = Visibility.Visible;
-
-            switch (App.CurrentUser.RoleName)
-            {
-                case "Адміністратор":
-                    break;
-                case "Касир":
-                    BtnProducts.Visibility = Visibility.Collapsed;
-                    BtnCategories.Visibility = Visibility.Collapsed;
-                    BtnSuppliers.Visibility = Visibility.Collapsed;
-                    BtnOrderManagement.Visibility = Visibility.Collapsed;
-                    BtnAddProduct.Visibility = Visibility.Collapsed;
-                    break;
-                case "Менеджер":
-                    BtnOrderManagement.Visibility = Visibility.Collapsed;
-                    break;
-            }
-        }
+       
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)

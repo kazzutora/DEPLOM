@@ -31,14 +31,7 @@ namespace WpfApp1
 
         public SalesWindow()
         {
-            if (App.CurrentUser == null ||
-          (App.CurrentUser.RoleName != "Адміністратор" &&
-           App.CurrentUser.RoleName != "Касир"))
-            {
-                MessageBox.Show("Доступ заборонено! Потрібні права адміністратора або касира");
-                Close();
-                return;
-            }
+            
             InitializeComponent();
             DataContext = this;
 
@@ -133,46 +126,46 @@ namespace WpfApp1
             }
         }
         private void BtnEditMinQuantity_Click(object sender, RoutedEventArgs e)
+{
+    if (ProductDataGrid.SelectedItem == null)
+    {
+        MessageBox.Show("Оберіть товар для редагування", "Увага", 
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+        return;
+    }
+
+    try
+    {
+        DataRowView row = (DataRowView)ProductDataGrid.SelectedItem;
+        int productId = Convert.ToInt32(row["ProductID"]);
+        string productName = row["Name"].ToString();
+        int currentMinQuantity = Convert.ToInt32(row["MinQuantity"]);
+
+        var editWindow = new EditMinQuantityWindow(productName, currentMinQuantity);
+        if (editWindow.ShowDialog() == true)
         {
-            if (ProductDataGrid.SelectedItem == null)
+            int newMinQuantity = editWindow.NewMinQuantity;
+            
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                MessageBox.Show("Оберіть товар для редагування", "Увага",
-                                MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                connection.Open();
+                string query = "UPDATE Products SET MinQuantity = @MinQuantity WHERE ProductID = @ProductID";
+                
+                SqlCommand cmd = new SqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("@MinQuantity", newMinQuantity);
+                cmd.Parameters.AddWithValue("@ProductID", productId);
+                cmd.ExecuteNonQuery();
             }
-
-            try
-            {
-                DataRowView row = (DataRowView)ProductDataGrid.SelectedItem;
-                int productId = Convert.ToInt32(row["ProductID"]);
-                string productName = row["Name"].ToString();
-                int currentMinQuantity = Convert.ToInt32(row["MinQuantity"]);
-
-                var editWindow = new EditMinQuantityWindow(productName, currentMinQuantity);
-                if (editWindow.ShowDialog() == true)
-                {
-                    int newMinQuantity = editWindow.NewMinQuantity;
-
-                    using (SqlConnection connection = new SqlConnection(connectionString))
-                    {
-                        connection.Open();
-                        string query = "UPDATE Products SET MinQuantity = @MinQuantity WHERE ProductID = @ProductID";
-
-                        SqlCommand cmd = new SqlCommand(query, connection);
-                        cmd.Parameters.AddWithValue("@MinQuantity", newMinQuantity);
-                        cmd.Parameters.AddWithValue("@ProductID", productId);
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    LoadProducts(); // Оновити дані
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Помилка оновлення: {ex.Message}", "Помилка",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            
+            LoadProducts(); // Оновити дані
         }
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Помилка оновлення: {ex.Message}", "Помилка", 
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+}
 
         private void LoadSalesHistory()
         {
