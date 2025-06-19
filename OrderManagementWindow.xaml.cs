@@ -70,14 +70,14 @@ namespace WpfApp1
                 {
                     connection.Open();
                     string query = @"
-                    SELECT p.ProductID, p.Name, p.Quantity, p.MinQuantity, p.PurchasePrice, 
-                           c.CategoryName, s.Name AS SupplierName, s.SupplierID,
-                           (p.MinQuantity - p.Quantity) AS OrderQuantity
-                    FROM Products p
-                    JOIN Categories c ON p.CategoryID = c.CategoryID
-                    LEFT JOIN Suppliers s ON p.SupplierID = s.SupplierID
-                    WHERE p.Quantity <= p.MinQuantity
-                    ORDER BY p.Quantity ASC";
+               SELECT p.ProductID, p.Name, p.Quantity, p.MinQuantity, p.PurchasePrice, 
+           c.CategoryName, s.Name AS SupplierName, s.SupplierID, s.Email AS SupplierEmail,
+           (p.MinQuantity - p.Quantity) AS OrderQuantity
+    FROM Products p
+    JOIN Categories c ON p.CategoryID = c.CategoryID
+    LEFT JOIN Suppliers s ON p.SupplierID = s.SupplierID
+    WHERE p.Quantity < p.MinQuantity
+    ORDER BY p.Quantity ASC";
 
                     SqlDataAdapter adapter = new SqlDataAdapter(query, connection);
                     lowStockProductsData = new DataTable();
@@ -538,54 +538,114 @@ namespace WpfApp1
 
             try
             {
-                int ordersCreated = 0;
+                // Структура для зберігання інформації про товар
+                var orderItems = new List<AutoOrderItem>();
+
+                // Збираємо інформацію про товари, що потребують замовлення
+                foreach (DataRow row in lowStockProductsData.Rows)
+                {
+                    int productId = Convert.ToInt32(row["ProductID"]);
+                    int currentQuantity = Convert.ToInt32(row["Quantity"]);
+                    int minQuantity = Convert.ToInt32(row["MinQuantity"]);
+                    int orderQuantity = minQuantity - currentQuantity;
+
+                    if (orderQuantity <= 0) continue;
+
+                    int? supplierId = row["SupplierID"] != DBNull.Value
+                        ? Convert.ToInt32(row["SupplierID"])
+                        : (int?)null;
+
+                    string supplierName = row["SupplierName"]?.ToString() ?? "Без постачальника";
+                    string supplierEmail = row.Table.Columns.Contains("SupplierEmail")
+                        ? row["SupplierEmail"]?.ToString()
+                        : null;
+
+                    orderItems.Add(new AutoOrderItem
+                    {
+                        ProductId = productId,
+                        ProductName = row["Name"].ToString(),
+                        Quantity = orderQuantity,
+                        PurchasePrice = Convert.ToDecimal(row["PurchasePrice"]),
+                        SupplierId = supplierId,
+                        SupplierName = supplierName,
+                        SupplierEmail = supplierEmail
+                    });
+                }
+
+                // Групуємо товари за постачальниками
+                var groupedOrders = orderItems
+                    .GroupBy(item => item.SupplierId)
+                    .ToList();
+
+                int totalOrdersCreated = 0;
+
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
 
-                    foreach (DataRow row in lowStockProductsData.Rows)
+                    // Обробляємо кожну групу постачальника
+                    foreach (var group in groupedOrders)
                     {
-                        int productId = Convert.ToInt32(row["ProductID"]);
-                        int currentQuantity = Convert.ToInt32(row["Quantity"]);
-                        int minQuantity = Convert.ToInt32(row["MinQuantity"]);
+                        var supplierId = group.Key;
+                        var firstItem = group.First();
 
-                        // Розрахунок необхідної кількості
-                        int orderQuantity = minQuantity - currentQuantity;
+                        // Відправляємо email тільки якщо є пошта постачальника
+                        if (!string.IsNullOrEmpty(firstItem.SupplierEmail))
+                        {
+                            try
+                            {
+                                // Формуємо список товарів для цього постачальника
+                                var itemsForEmail = group.Select(item => new
+                                {
+                                    item.ProductName,
+                                    item.Quantity,
+                                    item.PurchasePrice,
+                                    Total = item.Quantity * item.PurchasePrice
+                                }).ToList();
 
-                        // Перевірка, чи дійсно потрібне замовлення
-                        if (orderQuantity <= 0) continue;
+                                // Відправляємо згрупований email
+                                SendGroupedOrderEmail(
+                                    firstItem.SupplierEmail,
+                                    firstItem.SupplierName,
+                                    itemsForEmail,
+                                    DateTime.Now.AddDays(7)
+                                );
+                            }
+                            catch (Exception emailEx)
+                            {
+                                MessageBox.Show($"Не вдалося відправити email постачальнику {firstItem.SupplierName}: {emailEx.Message}",
+                                              "Попередження", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            }
+                        }
 
-                        decimal purchasePrice = Convert.ToDecimal(row["PurchasePrice"]);
-                        int? supplierId = row["SupplierID"] != DBNull.Value
-                            ? Convert.ToInt32(row["SupplierID"])
-                            : (int?)null;
+                        // Створюємо замовлення для кожного товару
+                        foreach (var item in group)
+                        {
+                            DateTime expectedDate = DateTime.Now.AddDays(7);
 
-                        // Очікувана дата поставки (наприклад, через 7 днів)
-                        DateTime expectedDate = DateTime.Now.AddDays(7);
+                            SqlCommand cmd = new SqlCommand(
+                                @"INSERT INTO Orders 
+                          (ProductID, QuantityOrdered, OrderDate, Status, 
+                           PurchasePrice, SupplierID, ExpectedDeliveryDate) 
+                          VALUES 
+                          (@ProductID, @QuantityOrdered, GETDATE(), 'Нове', 
+                           @PurchasePrice, @SupplierID, @ExpectedDeliveryDate)",
+                                connection);
 
-                        // Створення замовлення з правильним статусом
-                        SqlCommand cmd = new SqlCommand(
-                            @"INSERT INTO Orders 
-                    (ProductID, QuantityOrdered, OrderDate, Status, 
-                     PurchasePrice, SupplierID, ExpectedDeliveryDate) 
-                    VALUES 
-                    (@ProductID, @QuantityOrdered, GETDATE(), 'Нове', 
-                     @PurchasePrice, @SupplierID, @ExpectedDeliveryDate)",
-                            connection);
+                            cmd.Parameters.AddWithValue("@ProductID", item.ProductId);
+                            cmd.Parameters.AddWithValue("@QuantityOrdered", item.Quantity);
+                            cmd.Parameters.AddWithValue("@PurchasePrice", item.PurchasePrice);
+                            cmd.Parameters.AddWithValue("@SupplierID", (object)item.SupplierId ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@ExpectedDeliveryDate", expectedDate);
 
-                        cmd.Parameters.AddWithValue("@ProductID", productId);
-                        cmd.Parameters.AddWithValue("@QuantityOrdered", orderQuantity);
-                        cmd.Parameters.AddWithValue("@PurchasePrice", purchasePrice);
-                        cmd.Parameters.AddWithValue("@SupplierID", (object)supplierId ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@ExpectedDeliveryDate", expectedDate);
-
-                        cmd.ExecuteNonQuery();
-                        ordersCreated++;
+                            cmd.ExecuteNonQuery();
+                            totalOrdersCreated++;
+                        }
                     }
                 }
 
-                MessageBox.Show($"Створено {ordersCreated} автоматичних замовлень!\n" +
-                              $"Кожне замовлення на кількість, необхідну для досягнення мінімального запасу.",
+                MessageBox.Show($"Створено {totalOrdersCreated} автоматичних замовлень!\n" +
+                              $"Відправлено email постачальникам.",
                               "Успіх", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Оновлюємо дані
@@ -596,6 +656,85 @@ namespace WpfApp1
             {
                 MessageBox.Show($"Помилка при автоматичному замовленні: {ex.Message}", "Помилка",
                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private class AutoOrderItem
+        {
+            public int ProductId { get; set; }
+            public string ProductName { get; set; }
+            public int Quantity { get; set; }
+            public decimal PurchasePrice { get; set; }
+            public int? SupplierId { get; set; }
+            public string SupplierName { get; set; }
+            public string SupplierEmail { get; set; }
+        }
+
+        // Метод для відправки згрупованого email
+        private void SendGroupedOrderEmail(string supplierEmail, string supplierName,
+                                          IEnumerable<dynamic> items, DateTime expectedDate)
+        {
+            try
+            {
+                using (SmtpClient client = new SmtpClient("smtp.gmail.com", 587))
+                {
+                    client.Credentials = new NetworkCredential("diabloroale9@gmail.com", "mlfb nkqk mdfa qjjr"); 
+                    client.EnableSsl = true;
+
+                    using (MailMessage message = new MailMessage())
+                    {
+                        message.From = new MailAddress("your_email@gmail.com");
+                        message.Subject = $"Замовлення товарів від {DateTime.Today:dd.MM.yyyy}";
+
+                        // Формуємо HTML-тіло листа
+                        string htmlBody = $@"
+                    <html>
+                    <body>
+                        <h2>Шановний постачальник {supplierName},</h2>
+                        <p>Ми сформували для Вас замовлення. Деталі:</p>
+                        <table border='1' cellpadding='5' cellspacing='0'>
+                            <tr>
+                                <th>Товар</th>
+                                <th>Кількість</th>
+                                <th>Ціна за одиницю</th>
+                                <th>Сума</th>
+                            </tr>";
+
+                        decimal totalAmount = 0;
+
+                        foreach (var item in items)
+                        {
+                            htmlBody += $@"
+                        <tr>
+                            <td>{item.ProductName}</td>
+                            <td>{item.Quantity}</td>
+                            <td>{item.PurchasePrice:N2} грн</td>
+                            <td>{item.Total:N2} грн</td>
+                        </tr>";
+                            totalAmount += item.Total;
+                        }
+
+                        htmlBody += $@"
+                            <tr>
+                                <td colspan='3'><strong>Загальна сума</strong></td>
+                                <td><strong>{totalAmount:N2} грн</strong></td>
+                            </tr>
+                        </table>
+                        <p><strong>Очікувана дата поставки:</strong> {expectedDate:dd.MM.yyyy}</p>
+                        <p>З повагою,<br/>Ваш магазин</p>
+                    </body>
+                    </html>";
+
+                        message.Body = htmlBody;
+                        message.IsBodyHtml = true;
+                        message.To.Add(supplierEmail);
+
+                        client.Send(message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Помилка відправки email: {ex.Message}", ex);
             }
         }
         private void SetupContextMenu()

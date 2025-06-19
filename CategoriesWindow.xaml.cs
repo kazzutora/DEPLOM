@@ -12,6 +12,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Text.RegularExpressions;
+
 namespace WpfApp1
 {
     public partial class CategoriesWindow : Window
@@ -57,29 +59,43 @@ namespace WpfApp1
         private void AddCategory_Click(object sender, RoutedEventArgs e)
         {
             var input = Microsoft.VisualBasic.Interaction.InputBox("Введіть назву категорії:", "Додати категорію", "");
-            if (!string.IsNullOrWhiteSpace(input))
-            {
-                try
-                {
-                    using (SqlConnection connection = new SqlConnection(connectionString))
-                    {
-                        connection.Open();
-                        string query = "INSERT INTO Categories (CategoryName) VALUES (@CategoryName)";
-                        SqlCommand command = new SqlCommand(query, connection);
-                        command.Parameters.AddWithValue("@CategoryName", input);
-                        command.ExecuteNonQuery();
-                    }
-                    LoadCategories();
-                    MessageBox.Show("Категорію додано успішно.");
-                }
-                catch (SqlException ex)
-                {
-                    MessageBox.Show($"Помилка додавання категорії: {ex.Message}");
-                }
-            }
-            else
+
+            if (string.IsNullOrWhiteSpace(input))
             {
                 MessageBox.Show("Назва категорії не може бути пустою.");
+                return;
+            }
+
+            // Перевірка довжини (максимум 25 символів)
+            if (input.Length > 25)
+            {
+                MessageBox.Show("Назва категорії не може перевищувати 25 символів.");
+                return;
+            }
+
+            // Перевірка на наявність цифр
+            if (Regex.IsMatch(input, @"\d"))
+            {
+                MessageBox.Show("Назва категорії не може містити цифри.");
+                return;
+            }
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    string query = "INSERT INTO Categories (CategoryName) VALUES (@CategoryName)";
+                    SqlCommand command = new SqlCommand(query, connection);
+                    command.Parameters.AddWithValue("@CategoryName", input);
+                    command.ExecuteNonQuery();
+                }
+                LoadCategories();
+                MessageBox.Show("Категорію додано успішно.");
+            }
+            catch (SqlException ex)
+            {
+                MessageBox.Show($"Помилка додавання категорії: {ex.Message}");
             }
         }
 

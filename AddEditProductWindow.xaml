@@ -56,7 +56,8 @@
 
                 <!-- Відображення вибраного фото -->
                 <StackPanel Grid.Column="1" Margin="16 0 0 0" VerticalAlignment="Top">
-                    <Border BorderBrush="{DynamicResource BorderBrush}" 
+                    <Border x:Name="ImageBorder"
+                            BorderBrush="{DynamicResource BorderBrush}" 
                             BorderThickness="1" 
                             CornerRadius="4"
                             Padding="4" Width="302" Height="313">
@@ -78,6 +79,13 @@
                             Click="BrowseButton_Click" 
                             Style="{StaticResource FlatButton}"
                             Margin="0 8 0 0"/>
+                    <!-- ДОДАНО КНОПКУ ВИДАЛЕННЯ -->
+                    <Button x:Name="DeleteImageButton" 
+                            Content="Видалити" 
+                            Click="DeleteImageButton_Click" 
+                            Style="{StaticResource FlatButton}"
+                            Margin="0 8 0 0"
+                            Visibility="Collapsed"/>
                 </StackPanel>
             </Grid>
 

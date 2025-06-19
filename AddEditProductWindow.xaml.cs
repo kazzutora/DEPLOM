@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
+using System.Windows.Media;
 
 namespace WpfApp1
 {
@@ -14,12 +15,14 @@ namespace WpfApp1
         private string connectionString = "Server=localhost;Database=StoreInventoryDB;Integrated Security=True;Encrypt=False;";
         private DataRowView editingProduct;
         private byte[] productImageBytes;
+        private readonly ErrorProvider errorProvider = new ErrorProvider();
 
         public AddEditProductWindow(DataRowView product = null)
         {
             InitializeComponent();
             editingProduct = product;
             LoadCategoriesAndSuppliers();
+            SetupValidation();
 
             if (editingProduct != null)
             {
@@ -34,7 +37,131 @@ namespace WpfApp1
                 {
                     productImageBytes = (byte[])editingProduct["Image"];
                     ProductImage.Source = LoadImage(productImageBytes);
+                    DeleteImageButton.Visibility = Visibility.Visible;
                 }
+            }
+        }
+
+        private void SetupValidation()
+        {
+            // Валідація назви продукту
+            NameTextBox.TextChanged += (s, e) => ValidateName();
+
+            // Валідація кількості
+            QuantityTextBox.TextChanged += (s, e) => ValidateQuantity();
+
+            // Валідація ціни
+            PriceTextBox.TextChanged += (s, e) => ValidatePrice();
+
+            // Валідація ціни закупівлі
+            PurchasePriceTextBox.TextChanged += (s, e) => ValidatePurchasePrice();
+
+            // Валідація вибору категорії
+            CategoryComboBox.SelectionChanged += (s, e) => ValidateCategory();
+
+            // Валідація вибору постачальника
+            SupplierComboBox.SelectionChanged += (s, e) => ValidateSupplier();
+
+            // Валідація фото при зміні
+            BrowseButton.Click += (s, e) => ValidateImage();
+            DeleteImageButton.Click += (s, e) => ValidateImage();
+        }
+
+        private void ValidateName()
+        {
+            if (!Validator.ValidateName(NameTextBox.Text))
+            {
+                errorProvider.SetError("Name", "Назва має містити тільки літери, цифри та пробіли");
+                NameTextBox.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                errorProvider.ClearError("Name");
+                NameTextBox.BorderBrush = SystemColors.ControlDarkBrush;
+            }
+        }
+
+        private void ValidateQuantity()
+        {
+            if (!Validator.ValidateNumber(QuantityTextBox.Text, false, 0, 10000))
+            {
+                errorProvider.SetError("Quantity", "Кількість має бути цілим числом від 0 до 10000");
+                QuantityTextBox.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                errorProvider.ClearError("Quantity");
+                QuantityTextBox.BorderBrush = SystemColors.ControlDarkBrush;
+            }
+        }
+
+        private void ValidatePrice()
+        {
+            if (!Validator.ValidateNumber(PriceTextBox.Text, true, 0.01, 1000000))
+            {
+                errorProvider.SetError("Price", "Ціна має бути числом від 0.01 до 1 000 000");
+                PriceTextBox.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                errorProvider.ClearError("Price");
+                PriceTextBox.BorderBrush = SystemColors.ControlDarkBrush;
+            }
+        }
+
+        private void ValidatePurchasePrice()
+        {
+            if (!Validator.ValidateNumber(PurchasePriceTextBox.Text, true, 0.01, 1000000))
+            {
+                errorProvider.SetError("PurchasePrice", "Ціна закупівлі має бути числом від 0.01 до 1 000 000");
+                PurchasePriceTextBox.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                errorProvider.ClearError("PurchasePrice");
+                PurchasePriceTextBox.BorderBrush = SystemColors.ControlDarkBrush;
+            }
+        }
+
+        private void ValidateCategory()
+        {
+            if (CategoryComboBox.SelectedItem == null)
+            {
+                errorProvider.SetError("Category", "Будь ласка, оберіть категорію");
+                CategoryComboBox.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                errorProvider.ClearError("Category");
+                CategoryComboBox.BorderBrush = SystemColors.ControlDarkBrush;
+            }
+        }
+
+        private void ValidateSupplier()
+        {
+            if (SupplierComboBox.SelectedItem == null)
+            {
+                errorProvider.SetError("Supplier", "Будь ласка, оберіть постачальника");
+                SupplierComboBox.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                errorProvider.ClearError("Supplier");
+                SupplierComboBox.BorderBrush = SystemColors.ControlDarkBrush;
+            }
+        }
+
+        private void ValidateImage()
+        {
+            if (productImageBytes == null || productImageBytes.Length == 0)
+            {
+                errorProvider.SetError("Image", "Фото є обов'язковим");
+                ImageBorder.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                errorProvider.ClearError("Image");
+                ImageBorder.BorderBrush = SystemColors.ControlDarkBrush;
             }
         }
 
@@ -64,6 +191,14 @@ namespace WpfApp1
             }
         }
 
+        private void DeleteImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            productImageBytes = null;
+            ProductImage.Source = null;
+            DeleteImageButton.Visibility = Visibility.Collapsed;
+            ValidateImage(); // Оновити валідацію
+        }
+
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new OpenFileDialog
@@ -78,6 +213,8 @@ namespace WpfApp1
                 {
                     productImageBytes = File.ReadAllBytes(openFileDialog.FileName);
                     ProductImage.Source = LoadImage(productImageBytes);
+                    DeleteImageButton.Visibility = Visibility.Visible;
+                    ValidateImage(); // Оновити валідацію
                 }
                 catch (Exception ex)
                 {
@@ -121,13 +258,26 @@ namespace WpfApp1
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(NameTextBox.Text) ||
+            ValidateName();
+            ValidateQuantity();
+            ValidatePrice();
+            ValidatePurchasePrice();
+            ValidateCategory();
+            ValidateSupplier();
+            ValidateImage();
+
+            // Перевірка заповненості всіх обов'язкових полів
+            bool hasError =
+                !Validator.ValidateName(NameTextBox.Text) ||
+                !Validator.ValidateNumber(QuantityTextBox.Text, false, 0, 10000) ||
+                !Validator.ValidateNumber(PriceTextBox.Text, true, 0.01, 1000000) ||
                 CategoryComboBox.SelectedItem == null ||
-                string.IsNullOrWhiteSpace(QuantityTextBox.Text) ||
-                string.IsNullOrWhiteSpace(PriceTextBox.Text) ||
-                SupplierComboBox.SelectedItem == null)
+                SupplierComboBox.SelectedItem == null ||
+                productImageBytes == null || productImageBytes.Length == 0;
+
+            if (hasError)
             {
-                MessageBox.Show("Будь ласка, заповніть всі обов'язкові поля.");
+                MessageBox.Show("Будь ласка, заповніть всі обов'язкові поля та додайте фото.");
                 return;
             }
 

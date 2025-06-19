@@ -59,7 +59,29 @@ namespace WpfApp1
             }
         }
 
-        public decimal AverageReceipt => ItemsSold > 0 ? DailySales / ItemsSold : 0;
+        // Замінити існуючу властивість AverageReceipt
+        public decimal AverageReceipt => GetOverallAverageReceipt();
+
+        private decimal GetOverallAverageReceipt()
+        {
+            string query = @"SELECT 
+        CASE 
+            WHEN SUM(QuantitySold) > 0 
+            THEN SUM(TotalAmount) / SUM(QuantitySold) 
+            ELSE 0 
+        END
+        FROM Sales";
+
+            using (var conn = new SqlConnection(connectionString))
+            using (var cmd = new SqlCommand(query, conn))
+            {
+                conn.Open();
+                return Convert.ToDecimal(cmd.ExecuteScalar());
+            }
+        }
+
+        // Оновити метод LoadStatistics
+       
 
         public string TopProduct
         {
@@ -115,6 +137,7 @@ namespace WpfApp1
                 WeeklySales = GetWeeklySalesFromDatabase();
                 ItemsSold = GetSoldItemsCountFromDatabase();
                 TopProduct = GetTopProductFromDatabase();
+                OnPropertyChanged(nameof(AverageReceipt)); // Додати оновлення
             }
             catch (Exception ex)
             {

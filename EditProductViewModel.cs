@@ -17,6 +17,7 @@ namespace WpfApp1
         private readonly string connectionString = "Server=localhost;Database=StoreInventoryDB;Integrated Security=True;Encrypt=False;";
         private readonly Product originalProduct;
         private byte[] imageBytes;
+        private readonly ErrorProvider errorProvider = new ErrorProvider();
 
         public EditProductViewModel(Product product)
         {
@@ -42,42 +43,72 @@ namespace WpfApp1
         public string Name
         {
             get => _name;
-            set { _name = value; OnPropertyChanged(nameof(Name)); }
+            set
+            {
+                _name = value;
+                OnPropertyChanged(nameof(Name));
+                ValidateProperty(nameof(Name), value);
+            }
         }
 
         private string _selectedCategory;
         public string SelectedCategory
         {
             get => _selectedCategory;
-            set { _selectedCategory = value; OnPropertyChanged(nameof(SelectedCategory)); }
+            set
+            {
+                _selectedCategory = value;
+                OnPropertyChanged(nameof(SelectedCategory));
+                ValidateProperty(nameof(SelectedCategory), value);
+            }
         }
 
         private int _quantity;
         public int Quantity
         {
             get => _quantity;
-            set { _quantity = value; OnPropertyChanged(nameof(Quantity)); }
+            set
+            {
+                _quantity = value;
+                OnPropertyChanged(nameof(Quantity));
+                ValidateProperty(nameof(Quantity), value);
+            }
         }
 
         private decimal _price;
         public decimal Price
         {
             get => _price;
-            set { _price = value; OnPropertyChanged(nameof(Price)); }
+            set
+            {
+                _price = value;
+                OnPropertyChanged(nameof(Price));
+                ValidateProperty(nameof(Price), value);
+            }
         }
 
         private string _selectedSupplier;
         public string SelectedSupplier
         {
             get => _selectedSupplier;
-            set { _selectedSupplier = value; OnPropertyChanged(nameof(SelectedSupplier)); }
+            set
+            {
+                _selectedSupplier = value;
+                OnPropertyChanged(nameof(SelectedSupplier));
+                ValidateProperty(nameof(SelectedSupplier), value);
+            }
         }
 
         private decimal _purchasePrice;
         public decimal PurchasePrice
         {
             get => _purchasePrice;
-            set { _purchasePrice = value; OnPropertyChanged(nameof(PurchasePrice)); }
+            set
+            {
+                _purchasePrice = value;
+                OnPropertyChanged(nameof(PurchasePrice));
+                ValidateProperty(nameof(PurchasePrice), value);
+            }
         }
 
         public byte[] ImageBytes
@@ -96,6 +127,97 @@ namespace WpfApp1
         {
             get => _productImage;
             private set { _productImage = value; OnPropertyChanged(nameof(ProductImage)); }
+        }
+
+        // Властивості для помилок
+        public string NameError => errorProvider.GetError(nameof(Name));
+        public string CategoryError => errorProvider.GetError(nameof(SelectedCategory));
+        public string QuantityError => errorProvider.GetError(nameof(Quantity));
+        public string PriceError => errorProvider.GetError(nameof(Price));
+        public string SupplierError => errorProvider.GetError(nameof(SelectedSupplier));
+        public string PurchasePriceError => errorProvider.GetError(nameof(PurchasePrice));
+
+        public bool HasErrors => errorProvider.HasErrors;
+
+        private void ValidateProperty(string propertyName, object value)
+        {
+            switch (propertyName)
+            {
+                case nameof(Name):
+                    if (!Validator.ValidateName(Name))
+                    {
+                        errorProvider.SetError(propertyName, "Назва має містити тільки літери, цифри та пробіли");
+                    }
+                    else
+                    {
+                        errorProvider.ClearError(propertyName);
+                    }
+                    OnPropertyChanged(nameof(NameError));
+                    break;
+
+                case nameof(Quantity):
+                    if (!Validator.ValidateNumber(Quantity.ToString(), false, 0, 10000))
+                    {
+                        errorProvider.SetError(propertyName, "Кількість має бути цілим числом від 0 до 10000");
+                    }
+                    else
+                    {
+                        errorProvider.ClearError(propertyName);
+                    }
+                    OnPropertyChanged(nameof(QuantityError));
+                    break;
+
+                case nameof(Price):
+                    if (!Validator.ValidateNumber(Price.ToString(), true, 0.01, 1000000))
+                    {
+                        errorProvider.SetError(propertyName, "Ціна має бути числом від 0.01 до 1 000 000");
+                    }
+                    else
+                    {
+                        errorProvider.ClearError(propertyName);
+                    }
+                    OnPropertyChanged(nameof(PriceError));
+                    break;
+
+                case nameof(PurchasePrice):
+                    if (!Validator.ValidateNumber(PurchasePrice.ToString(), true, 0.01, 1000000))
+                    {
+                        errorProvider.SetError(propertyName, "Ціна закупівлі має бути числом від 0.01 до 1 000 000");
+                    }
+                    else
+                    {
+                        errorProvider.ClearError(propertyName);
+                    }
+                    OnPropertyChanged(nameof(PurchasePriceError));
+                    break;
+
+                case nameof(SelectedCategory):
+                    if (string.IsNullOrEmpty(SelectedCategory))
+                    {
+                        errorProvider.SetError(propertyName, "Будь ласка, оберіть категорію");
+                    }
+                    else
+                    {
+                        errorProvider.ClearError(propertyName);
+                    }
+                    OnPropertyChanged(nameof(CategoryError));
+                    break;
+
+                case nameof(SelectedSupplier):
+                    if (string.IsNullOrEmpty(SelectedSupplier))
+                    {
+                        errorProvider.SetError(propertyName, "Будь ласка, оберіть постачальника");
+                    }
+                    else
+                    {
+                        errorProvider.ClearError(propertyName);
+                    }
+                    OnPropertyChanged(nameof(SupplierError));
+                    break;
+            }
+
+            // Оновлюємо стан команди збереження
+            ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
         }
 
         private void LoadCategoriesAndSuppliers()
@@ -184,7 +306,8 @@ namespace WpfApp1
 
         private bool CanSave(object parameter)
         {
-            return !string.IsNullOrWhiteSpace(Name) &&
+            return !errorProvider.HasErrors &&
+                   !string.IsNullOrWhiteSpace(Name) &&
                    SelectedCategory != null &&
                    Quantity >= 0 &&
                    Price > 0 &&
@@ -194,6 +317,13 @@ namespace WpfApp1
 
         private void Save(object parameter)
         {
+            if (errorProvider.HasErrors)
+            {
+                MessageBox.Show("Виправте помилки перед збереженням", "Помилки валідації",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             try
             {
                 using (var connection = new SqlConnection(connectionString))
@@ -270,5 +400,10 @@ namespace WpfApp1
 
         public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
         public void Execute(object parameter) => _execute(parameter);
+
+        public void RaiseCanExecuteChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
+        }
     }
 }

@@ -11,7 +11,7 @@
         <Color x:Key="TextColor">#FF000000</Color>
         <Color x:Key="CardColor">#FFFFFFFF</Color>
         <Color x:Key="ShadowColor">#40000000</Color>
-
+        <SolidColorBrush x:Key="SecondaryBrushLowOpacity" Color="{DynamicResource PrimaryColor}" Opacity="0.0625"/>
         <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource PrimaryColor}"/>
         <SolidColorBrush x:Key="PrimaryBrushLowOpacity" Color="#206F42C1"/>
         <SolidColorBrush x:Key="PrimaryBrushMediumOpacity" Color="#606F42C1"/>
@@ -168,11 +168,15 @@
             <Border Grid.Column="0" Background="{DynamicResource CardBrush}" 
                     Effect="{StaticResource CardShadow}" Padding="0 16">
                 <StackPanel>
+                    <!-- Заголовок "Головна" замість кнопки -->
+                    <TextBlock Text="Головна" 
+                                   FontSize="16" 
+                                   FontWeight="Bold" 
+                                   Margin="16 16 16 8"
+                                   Foreground="{DynamicResource PrimaryBrush}"/>
                     <!-- Панель інструментів -->
                     <StackPanel Margin="0 0 0 16">
-                        <Button Content="🏠 Головна" Click="Home_Click" 
-                                Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
-                                Margin="8 4"/>
+                       
                         <Button x:Name="BtnProducts" Content="📦 Продукти" Click="OpenProducts_Click" 
                                 Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
                                 Margin="8 4"/>
@@ -202,9 +206,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Button Content="⚙️ Налаштування" 
-                            Style="{StaticResource FlatButton}" HorizontalAlignment="Stretch"
-                            Margin="8 16 8 8"/>
+                   
 
                     <!-- Кнопка виходу -->
                     <Button x:Name="BtnLogout" 

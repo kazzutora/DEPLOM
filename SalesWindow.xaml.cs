@@ -109,13 +109,15 @@ namespace WpfApp1
                 {
                     connection.Open();
                     string query = @"
-                        SELECT p.ProductID, p.Name, p.Quantity, p.Price, c.CategoryName, 
-                               CASE WHEN p.Quantity <= 0 THEN 'Немає в наявності'
-                                    WHEN p.Quantity < 10 THEN 'Закінчується'
-                                    ELSE 'В наявності' END AS Status
-                        FROM Products p
-                        JOIN Categories c ON p.CategoryID = c.CategoryID
-                        ORDER BY p.Name";
+                       SELECT p.ProductID, p.Name, p.Quantity, p.Price, c.CategoryName, p.MinQuantity,
+                       CASE 
+                           WHEN p.Quantity <= 0 THEN 'Немає в наявності'
+                           WHEN p.Quantity < p.MinQuantity THEN 'Закінчується'
+                           ELSE 'В наявності' 
+                       END AS Status
+                FROM Products p
+                JOIN Categories c ON p.CategoryID = c.CategoryID
+                ORDER BY p.Name";
 
                     SqlDataAdapter adapter = new SqlDataAdapter(query, connection);
                     productsData = new DataTable();
@@ -128,6 +130,47 @@ namespace WpfApp1
             catch (Exception ex)
             {
                 MessageBox.Show($"Помилка завантаження товарів: {ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void BtnEditMinQuantity_Click(object sender, RoutedEventArgs e)
+        {
+            if (ProductDataGrid.SelectedItem == null)
+            {
+                MessageBox.Show("Оберіть товар для редагування", "Увага",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                DataRowView row = (DataRowView)ProductDataGrid.SelectedItem;
+                int productId = Convert.ToInt32(row["ProductID"]);
+                string productName = row["Name"].ToString();
+                int currentMinQuantity = Convert.ToInt32(row["MinQuantity"]);
+
+                var editWindow = new EditMinQuantityWindow(productName, currentMinQuantity);
+                if (editWindow.ShowDialog() == true)
+                {
+                    int newMinQuantity = editWindow.NewMinQuantity;
+
+                    using (SqlConnection connection = new SqlConnection(connectionString))
+                    {
+                        connection.Open();
+                        string query = "UPDATE Products SET MinQuantity = @MinQuantity WHERE ProductID = @ProductID";
+
+                        SqlCommand cmd = new SqlCommand(query, connection);
+                        cmd.Parameters.AddWithValue("@MinQuantity", newMinQuantity);
+                        cmd.Parameters.AddWithValue("@ProductID", productId);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    LoadProducts(); // Оновити дані
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Помилка оновлення: {ex.Message}", "Помилка",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
